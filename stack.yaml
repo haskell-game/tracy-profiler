@@ -1,0 +1,17 @@
+snapshot: lts-22.44
+
+packages:
+- .
+
+extra-deps:
+- symbolize-1.0.3.1
+- webcolor-labels-0.1.0.0
+
+# extra-lib-dirs:
+# - upstream/tracy/build
+flags:
+  tracy-profiler:
+    enable: true
+    manual_lifetime: false
+
+system-ghc: true

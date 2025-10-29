@@ -1,0 +1,4 @@
+packages: .
+
+package tracy-profiler
+  flags: -manual_lifetime +enable

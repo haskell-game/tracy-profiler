@@ -1,0 +1,6 @@
+dist-newstyle/
+.stack-work/
+stack.yaml.lock
+*~
+*.hs_
+*.tracy

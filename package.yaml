@@ -1,0 +1,86 @@
+name: tracy-profiler
+version: 0.1.0.0
+github: "haskell-game/tracy-profiler"
+license: BSD-3-Clause
+author: "IC Rainbow"
+maintainer: "aenor.realm@gmail.com"
+copyright: "2025 IC Rainbow"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+synopsis: Haskell bindings for Tracy frame profiler
+# description: |
+#   <https://github.com/wolfpld/tracy>
+
+dependencies:
+- base >= 4.7 && < 5
+
+flags:
+  enable:
+    description:
+      Enable to actually call the Tracy functions and produce data.
+      Otherwise the wrappers will be no-ops.
+    manual: true
+    default: false
+  manual_lifetime:
+    description:
+      Manually manage profiler lifetime.
+      Enable if your libtracyclient has this enabled.
+    manual: true
+    default: false
+
+library:
+  source-dirs: src
+  extra-libraries:
+  - TracyClient
+  when:
+  - condition: flag(manual_lifetime)
+    cpp-options:
+    - -DTRACY_MANUAL_LIFETIME
+  - condition: flag(enable)
+    cpp-options:
+    - -DTRACY_ENABLE
+
+  dependencies:
+  - bytestring
+  - text
+  - webcolor-labels
+
+tests:
+  tracy-profiler-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - tracy-profiler
+    - random
+
+language: GHC2021
+
+default-extensions:
+- BlockArguments
+- DerivingStrategies
+- DuplicateRecordFields
+- ImportQualifiedPost
+- LambdaCase
+- NoFieldSelectors
+- OverloadedLabels
+- OverloadedStrings
+- RecordWildCards
+- StrictData
+- ImplicitParams
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
