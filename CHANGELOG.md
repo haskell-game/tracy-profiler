@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
-## Unreleased
+## 0.1.1.0 - 2025-10-30
 
 - Fixes for copypasta in `#ifndef TRACE_ENABLE` sections.
 - `withProfiler` and `withSrcLoc_` now require `MonadUnliftIO`.
