@@ -58,17 +58,20 @@ import System.Tracy.Zone qualified as Zone
 
 #if defined(TRACY_ENABLE) && defined(TRACY_MANUAL_LIFETIME)
 import Control.Exception (bracket_)
+import Control.Monad.IO.Unlift (MonadUnliftIO, withRunInIO)
 #endif
 
 {- | Start/stop profiler when TRACY_MANUAL_LIFETIME is enabled.
 Otherwise does nothing.
 -}
-withProfiler :: IO a -> IO a
-withProfiler action =
 #if defined(TRACY_ENABLE) && defined(TRACY_MANUAL_LIFETIME)
-  bracket_ FFI.startupProfiler FFI.shutdownProfiler action
+withProfiler :: MonadUnliftIO m => m a -> m a
+withProfiler action =
+  withRunInIO \run ->
+    bracket_ FFI.startupProfiler FFI.shutdownProfiler (run action)
 #else
-  action
+withProfiler :: a -> a
+withProfiler = id
 #endif
 
 {- | Check whether the profiler is connected.

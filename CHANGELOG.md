@@ -9,6 +9,7 @@ and this project adheres to the
 ## Unreleased
 
 - Fixes for copypasta in `#ifndef TRACE_ENABLE` sections.
+- `withProfiler` and `withSrcLoc_` now require `MonadUnliftIO`.
 
 ## 0.1.0.0 - 2025-10-30
 

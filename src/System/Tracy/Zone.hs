@@ -25,7 +25,9 @@ import Foreign.C.ConstPtr (ConstPtr(..))
 
 #ifdef TRACY_ENABLE
 import Control.Exception (bracket)
+import Control.Monad.IO.Unlift (MonadUnliftIO, withRunInIO)
 #endif
+
 import System.Tracy.FFI qualified as FFI
 import System.Tracy.FFI.Types qualified as FFI
 
@@ -42,24 +44,30 @@ rendering = Zone.withSrcLoc_ \_\_LINE\_\_ \_\_FILE\_\_ "rendering" #yellow do
   -- ...
 @
 -}
-withSrcLoc_
-  :: Word32
+{-# INLINE withSrcLoc_ #-}
+withSrcLoc_ ::
+#ifndef TRACY_ENABLE
+  ()
+#else
+  (MonadUnliftIO m)
+#endif
+  => Word32
   -> ByteString
   -> ByteString
   -> FFI.Color
-  -> ((?zoneCtx :: FFI.TracyCZoneCtx) => IO a)
-  -> IO a
+  -> ((?zoneCtx :: FFI.TracyCZoneCtx) => m a)
+  -> m a
 #ifndef TRACY_ENABLE
 withSrcLoc_ _line _file _function _col action =
   let ?zoneCtx = FFI.nullTracyCZoneCtx
   in action
 #else
-withSrcLoc_ line file function col action = do
+withSrcLoc_ line file function col action = withRunInIO \run -> do
   srcloc <- allocSrcloc line file function Nothing col
   bracket
     (FFI.emitZoneBeginAlloc srcloc 1)
     FFI.emitZoneEnd
-    (\ctx -> let ?zoneCtx = ctx in action)
+    (\ctx -> run $ let ?zoneCtx = ctx in action)
 #endif
 
 {- | Prepare a single-use location identifier

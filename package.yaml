@@ -18,6 +18,7 @@ synopsis: Haskell bindings for Tracy frame profiler
 
 dependencies:
 - base >= 4.16 && < 5
+- unliftio-core
 
 flags:
   enable:

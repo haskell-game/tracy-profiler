@@ -76,6 +76,7 @@ library
       base >=4.16 && <5
     , bytestring
     , text >=2.0 && <3
+    , unliftio-core
     , webcolor-labels
   default-language: GHC2021
   if flag(manual_lifetime)
@@ -114,4 +115,5 @@ test-suite tracy-profiler-test
     , random
     , text
     , tracy-profiler
+    , unliftio-core
   default-language: GHC2021
