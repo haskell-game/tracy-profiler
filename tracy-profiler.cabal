@@ -73,7 +73,7 @@ library
   extra-libraries:
       TracyClient
   build-depends:
-      base >=4.7 && <5
+      base >=4.16 && <5
     , bytestring
     , text >=2.0 && <3
     , webcolor-labels
@@ -110,7 +110,7 @@ test-suite tracy-profiler-test
       ImplicitParams
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      base >=4.16 && <5
     , random
     , text
     , tracy-profiler
