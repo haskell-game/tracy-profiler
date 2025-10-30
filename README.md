@@ -78,6 +78,8 @@ runFrame ix = Tracy.withSrcLoc_ __LINE__ __FILE__ "runFrame" #fcc do
   Tracy.plotInt "digits"# digits
 ```
 
+## Collecting and viewing
+
 Start `tracy-capture` before running the test to avoid empty areas where nothing happens:
 
 ```sh
@@ -88,6 +90,12 @@ Run the code, then upload the collected data to [the viewer](https://tracy.nerei
 
 You'll see something like this:
 
-![screenshot](./readme.png)
+![screenshot](https://raw.githubusercontent.com/haskell-game/tracy-profiler/refs/heads/main/readme.png)
 
 > Are those are GC pauses we're looking at? 🤔
+
+## RTFM
+
+You really should go read the official [manual](https://github.com/wolfpld/tracy/blob/master/manual/tracy.md).
+
+Yes, BEFORE you run into corrupted memory, surprising grouppings, or otherwise botched profiling runs.

@@ -6,11 +6,12 @@ author: "IC Rainbow"
 maintainer: "aenor.realm@gmail.com"
 copyright: "2025 IC Rainbow"
 
-extra-source-files:
+extra-doc-files:
 - README.md
 - CHANGELOG.md
 - readme.png
 
+category: Profiling
 synopsis: Haskell bindings for Tracy frame profiler
 # description: |
 #   <https://github.com/wolfpld/tracy>
@@ -46,7 +47,7 @@ library:
 
   dependencies:
   - bytestring
-  - text
+  - text >= 2.0 && <3
   - webcolor-labels
 
 tests:

@@ -7,6 +7,7 @@ cabal-version: 2.2
 name:           tracy-profiler
 version:        0.1.0.0
 synopsis:       Haskell bindings for Tracy frame profiler
+category:       Profiling
 homepage:       https://github.com/haskell-game/tracy-profiler#readme
 bug-reports:    https://github.com/haskell-game/tracy-profiler/issues
 author:         IC Rainbow
@@ -15,9 +16,10 @@ copyright:      2025 IC Rainbow
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
-extra-source-files:
+extra-doc-files:
     README.md
     CHANGELOG.md
+    readme.png
 
 source-repository head
   type: git
@@ -63,7 +65,7 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
-    , text
+    , text >=2.0 && <3
     , webcolor-labels
   default-language: GHC2021
   if flag(manual_lifetime)
