@@ -8,7 +8,7 @@ Haskell bindings for [Tracy frame profiler](https://github.com/wolfpld/tracy).
 
 You can install the prebuilt package from your distribution if it has one:
 
-```
+```sh
 sudo apt install libtracy-dev tracy-capture
 ```
 
@@ -16,7 +16,7 @@ Or you can [download] and build one yourself and point your project to it:
 
 [download]: https://github.com/wolfpld/tracy/
 
-```
+```yaml
 extra-lib-dirs:
 - upstream/tracy/build
 extra-include-dirs:
@@ -38,7 +38,7 @@ That means you don't have to `ifdef` your code to remove the wrappers when they'
 
 You have to set the `enable` flag in your project for the data to be collected.
 
-```
+```yaml
 flags:
   tracy-profiler:
     enable: true
