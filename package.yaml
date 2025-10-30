@@ -32,6 +32,16 @@ flags:
       Enable if your libtracyclient has this enabled.
     manual: true
     default: false
+  fibers:
+    description:
+      Enable if your libtracyclient has this enabled.
+    manual: true
+    default: false
+  has_callstack:
+    description:
+      Enable if your libtracyclient has this enabled.
+    manual: true
+    default: false
 
 library:
   source-dirs: src
@@ -44,6 +54,12 @@ library:
   - condition: flag(enable)
     cpp-options:
     - -DTRACY_ENABLE
+  - condition: flag(fibers)
+    cpp-options:
+    - -DTRACY_FIBERS
+  - condition: flag(has_callstack)
+    cpp-options:
+    - -DTRACY_HAS_CALLSTACK
 
   dependencies:
   - bytestring
