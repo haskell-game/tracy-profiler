@@ -60,3 +60,10 @@ newtype TracyCZoneCtx = TracyCZoneCtx (Ptr TracyCZoneCtx)
 
 nullTracyCZoneCtx :: TracyCZoneCtx
 nullTracyCZoneCtx = TracyCZoneCtx nullPtr
+
+data PlotFormat
+  = PlotFormatNumber -- ^ values will be displayed as plain numbers.
+  | PlotFormatMemory -- ^ treats the values as memory sizes. Will display kilobytes, megabytes, etc.
+  | PlotFormatPercentage -- ^ values will be displayed as percentage (with value @100@ being equal to 100%).
+  | PlotFormatWatt
+  deriving (Eq, Ord, Show, Enum, Bounded)

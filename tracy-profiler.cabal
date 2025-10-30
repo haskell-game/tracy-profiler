@@ -73,7 +73,7 @@ library
 
 test-suite tracy-profiler-test
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: Readme.hs
   other-modules:
       Paths_tracy_profiler
   autogen-modules:
@@ -96,5 +96,6 @@ test-suite tracy-profiler-test
   build-depends:
       base >=4.7 && <5
     , random
+    , text
     , tracy-profiler
   default-language: GHC2021

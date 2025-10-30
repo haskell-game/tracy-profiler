@@ -4,8 +4,11 @@
 module System.Tracy
   ( withProfiler
   , connected
+  , waitConnected
+  , waitConnected_
 
   , setThreadName
+  , appInfo
 
   , Zone.withSrcLoc_
 
@@ -23,25 +26,39 @@ module System.Tracy
   , plotFloat
   , plotInt
   , plotIntegral
+  , plotConfig
+  , PlotFormat(..)
+
+#ifdef TRACY_FIBERS
+  , fiberEnter
+  , fiberLeave
+#endif
 
   , Color
   ) where
 
+import Control.Concurrent (threadDelay)
+import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(..))
+import Data.Maybe (fromMaybe)
+import Data.Text (Text)
+import Data.Text.Foreign qualified as Text
 import Foreign (nullPtr)
 import Foreign.C.ConstPtr (ConstPtr(..))
 import GHC.Exts (Ptr(..), Addr#)
-import Data.Text (Text)
-import Data.Text.Foreign qualified as Text
+import System.Timeout (timeout)
 
 import System.Tracy.FFI qualified as FFI
-import System.Tracy.FFI.Types (Color)
+import System.Tracy.FFI.Types (Color, PlotFormat(..))
 import System.Tracy.Zone qualified as Zone
 
 #if defined(TRACY_ENABLE) && defined(TRACY_MANUAL_LIFETIME)
 import Control.Exception (bracket_)
 #endif
 
+{- | Start/stop profiler when TRACY_MANUAL_LIFETIME is enabled.
+Otherwise does nothing.
+-}
 withProfiler :: IO a -> IO a
 withProfiler action =
 #if defined(TRACY_ENABLE) && defined(TRACY_MANUAL_LIFETIME)
@@ -50,8 +67,47 @@ withProfiler action =
   action
 #endif
 
+{- | Check whether the profiler is connected.
+-}
 connected :: IO Bool
+#if defined(TRACY_ENABLE)
 connected = (/= 0) <$> FFI.connected
+#else
+connected = pure False
+#endif
+
+{- | Poll connection status repeatedly until the profiler is connected or the time is up.
+
+Immediately returns False when Tracy is not enabled.
+-}
+waitConnected
+  :: MonadIO m
+  => Int       -- ^ Poll interval
+  -> Maybe Int -- ^ Maximum waiting time
+  -> m Bool
+#if defined(TRACY_ENABLE)
+waitConnected interval mtimeout =
+  liftIO $
+    case mtimeout of
+      Nothing -> go
+      Just t -> fromMaybe False <$> timeout t go
+  where
+    go = do
+      conn <- connected
+      if conn then
+        pure True
+      else
+        threadDelay interval >> go
+#else
+waitConnected _interval _timeout = pure False -- XXX: ignore indefinite waiting
+#endif
+
+{- | Wait indefinitely until the profiler connects.
+
+Useful for tests, benches, and other short-lifetime scripts.
+-}
+waitConnected_ :: IO ()
+waitConnected_ = void $ waitConnected 100000 Nothing
 
 setThreadName :: Addr# -> IO ()
 #if defined(TRACY_ENABLE)
@@ -164,9 +220,59 @@ plotIntegral name val = liftIO $
 plotIntegral _name = pure ()
 #endif
 
--- TODO: emitPlotConfig
+{-# INLINE plotConfig #-}
+plotConfig
+  :: MonadIO m
+  => Addr#
+  -> PlotFormat
+  -> Bool -- ^ Step
+  -> Bool -- ^ Fill
+  -> Color
+  -> m ()
+#if defined(TRACY_ENABLE)
+plotConfig name pf step fill col = liftIO $
+  FFI.emitPlotConfig
+    (ConstPtr (Ptr name))
+    (fromIntegral $ fromEnum pf)
+    (fromIntegral $ fromEnum step)
+    (fromIntegral $ fromEnum fill)
+    col
+#else
+plotConfig _name _typ _step _fill _col = pure ()
+#endif
 
--- TODO: emitMessageAppinfo
+{- | Record additional information about the profiled application,
+  which will be available in the trace description.
 
--- TODO: fiberEnter
--- TODO: fiberLeave
+  This can include data such as the source repository revision, the
+  application's environment (dev/prod), etc.
+-}
+{-# INLINE appInfo #-}
+appInfo :: MonadIO m => Text -> m ()
+#if defined(TRACY_ENABLE)
+appInfo txt = liftIO $
+  Text.withCStringLen txt \(txtPtr, txtSz) ->
+    FFI.emitMessageAppinfo (ConstPtr txtPtr) (fromIntegral txtSz)
+#else
+appInfo _txt = pure ()
+#endif
+
+#ifdef TRACY_FIBERS
+{-# INLINE fiberEnter #-}
+fiberEnter :: MonadIO m => Addr# -> m ()
+#if defined(TRACY_ENABLE)
+fiberEnter name = liftIO $
+  FFI.fiberEnter (ConstPtr (Ptr name))
+#else
+fiberEnter _name = pure ()
+#endif
+
+{-# INLINE fiberLeave #-}
+fiberLeave :: MonadIO m => m ()
+#if defined(TRACY_ENABLE)
+fiberLeave name val = liftIO $
+  FFI.fiberLeave
+#else
+fiberLeave = pure ()
+#endif
+#endif

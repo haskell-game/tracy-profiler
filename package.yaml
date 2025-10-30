@@ -9,6 +9,7 @@ copyright: "2025 IC Rainbow"
 extra-source-files:
 - README.md
 - CHANGELOG.md
+- readme.png
 
 synopsis: Haskell bindings for Tracy frame profiler
 # description: |
@@ -50,7 +51,7 @@ library:
 
 tests:
   tracy-profiler-test:
-    main: Spec.hs
+    main: Readme.hs
     source-dirs: test
     ghc-options:
     - -threaded
@@ -59,6 +60,7 @@ tests:
     dependencies:
     - tracy-profiler
     - random
+    - text
 
 language: GHC2021
 

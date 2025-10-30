@@ -246,7 +246,7 @@ foreign import ccall unsafe "___tracy_emit_plot_config"
     -> CInt           -- ^ type
     -> CInt           -- ^ step
     -> CInt           -- ^ fill
-    -> Word32         -- ^ color
+    -> Color          -- ^ color
     -> IO ()
 
 -- XXX: yes, in the same block with emit_plot

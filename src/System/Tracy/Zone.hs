@@ -36,7 +36,7 @@ It will produce a @?zoneCtx@ implicit for the zone functions to work.
 
 import System.Tracy.Zone qualified as Zone
 
-rendering = Zone.withSrcLoc_ __LINE__ __FILE__ "rendering" #yellow do
+rendering = Zone.withSrcLoc_ \_\_LINE\_\_ \_\_FILE\_\_ "rendering" #yellow do
   -- ...
 @
 -}
