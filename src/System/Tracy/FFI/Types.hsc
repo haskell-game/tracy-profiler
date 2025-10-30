@@ -1,4 +1,4 @@
-module System.Tracy.FFI.Structs where
+module System.Tracy.FFI.Types where
 
 import Data.Word
 import Foreign
@@ -27,9 +27,9 @@ newtype SrcLoc = SrcLoc Word64
   deriving newtype (Eq, Ord, Storable)
 
 data SourceLocationData = SourceLocationData
-  { name     :: CString
-  , function :: CString
-  , file     :: CString
+  { name     :: Ptr CChar
+  , function :: Ptr CChar
+  , file     :: Ptr CChar
   , line     :: Word32
   , color    :: Word32
   }

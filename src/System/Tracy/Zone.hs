@@ -1,7 +1,19 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ImplicitParams #-}
 
-module System.Tracy.Zone where
+module System.Tracy.Zone
+  ( -- * Declare zones
+    withSrcLoc_
+
+    -- * Update zone context
+  , text
+  , name
+  , color
+  , value
+
+    -- * Internals
+  , allocSrcloc
+  ) where
 
 import Control.Exception (bracket)
 import Control.Monad.IO.Class (MonadIO(..))
@@ -13,7 +25,7 @@ import Data.Word
 import Foreign.C.ConstPtr (ConstPtr(..))
 
 import System.Tracy.FFI qualified as FFI
-import System.Tracy.FFI.Structs qualified as FFI
+import System.Tracy.FFI.Types qualified as FFI
 
 {- | Allocate SrcLoc and run a Zone with it.
 
@@ -81,6 +93,16 @@ allocSrcloc line source function name_ col =
             (ConstPtr functionPtr) (fromIntegral functionSz)
             (ConstPtr namePtr) (fromIntegral nameSz)
             col
+
+{- TODO: Wrap emitZoneBegin
+
+This needs keeping SourceLocationData structures filled with pinned pointers.
+Otherwise the data would be pulled much later, outside a potential with/bracket scope
+with garbage/crashes as a result.
+
+Some nice solution would require interning SourceLocationData and its data.
+Otherwise it's a copying galore and Tracy may fail to deduplicate the locations.
+-}
 
 {-# INLINE text #-}
 text :: (MonadIO m, ?zoneCtx :: FFI.TracyCZoneCtx) => Text -> m ()

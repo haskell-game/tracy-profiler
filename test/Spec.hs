@@ -4,18 +4,15 @@
 
 module Main where
 
-import System.Tracy qualified as Tracy
-import System.Tracy.Zone qualified as Zone
-import qualified System.Tracy.FFI as FFI
-
 import Control.Concurrent (threadDelay)
 import Control.Monad
-import Data.IORef
-import System.Random (randomIO)
-import GHC.Exts (Ptr(..))
-import Foreign.C.ConstPtr (ConstPtr(..))
-import Foreign.C.String (withCStringLen)
 import Data.Foldable (for_)
+import Data.IORef
+import Data.String (fromString)
+import System.Random (randomIO)
+
+import System.Tracy qualified as Tracy
+import System.Tracy.Zone qualified as Zone
 
 main :: IO ()
 main = Tracy.withProfiler do
@@ -47,8 +44,9 @@ update frameNumber piState = Tracy.withSrcLoc_ __LINE__ __FILE__ "update" #green
     Tracy.withSrcLoc_ __LINE__ __FILE__ "factorial" #fuchsia do
       let n = toInteger frameNumber
       let !f = show $ factorial (10 * n)
-      withCStringLen (take 100 $ "factorial of " <> show n <> " is " <> show f <> "...") \(txtPtr, txtSz) ->
-        FFI.emitMessage (ConstPtr txtPtr) (fromIntegral txtSz) 0
+      Tracy.messageC #fuchsia $
+        fromString . take 100 $ "factorial of " <> show n <> " is " <> show f <> "..."
+
   estimatePi piState
   physics
   threadDelay 2000
@@ -64,7 +62,7 @@ estimatePi piState = Tracy.withSrcLoc_ __LINE__ __FILE__ "estimatePi" #teal do
       in ((newInside, newTotal), ()))
   (inside, total) <- readIORef piState
   let !pi' = 4 * fromIntegral inside / fromIntegral total
-  FFI.emitPlot (ConstPtr $ Ptr "pi\0"#) pi'
+  Tracy.plot "pi"# pi'
 
 physics :: IO ()
 physics = Tracy.withSrcLoc_ __LINE__ __FILE__ "physics" #blue do

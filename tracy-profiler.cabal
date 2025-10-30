@@ -37,7 +37,7 @@ library
   exposed-modules:
       System.Tracy
       System.Tracy.FFI
-      System.Tracy.FFI.Structs
+      System.Tracy.FFI.Types
       System.Tracy.Zone
   other-modules:
       Paths_tracy_profiler

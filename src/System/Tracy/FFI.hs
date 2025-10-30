@@ -8,7 +8,7 @@ import Data.Word
 import Foreign.C
 import Foreign.C.ConstPtr (ConstPtr(..))
 
-import System.Tracy.FFI.Structs
+import System.Tracy.FFI.Types
 
 ----------------------------------------------------------------
 
@@ -183,14 +183,14 @@ foreign import ccall unsafe "___tracy_emit_messageC"
   emitMessageC
     :: ConstPtr CChar -- ^ txt
     -> CSize          -- ^ size
-    -> Word32         -- ^ color
+    -> Color          -- ^ color
     -> CInt           -- ^ callstack
     -> IO ()
 
 foreign import ccall unsafe "___tracy_emit_messageLC"
   emitMessageLC
     :: ConstPtr CChar -- ^ txt
-    -> Word32         -- ^ color
+    -> Color          -- ^ color
     -> CInt           -- ^ callstack
     -> IO ()
 
