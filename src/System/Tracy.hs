@@ -37,18 +37,22 @@ module System.Tracy
   , Color
   ) where
 
-import Control.Concurrent (threadDelay)
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(..))
-import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import GHC.Exts (Addr#)
+
+#if defined(TRACY_ENABLE)
+import Control.Concurrent (threadDelay)
+import Data.Maybe (fromMaybe)
 import Data.Text.Foreign qualified as Text
 import Foreign (nullPtr)
 import Foreign.C.ConstPtr (ConstPtr(..))
-import GHC.Exts (Ptr(..), Addr#)
+import GHC.Exts(Ptr(..))
 import System.Timeout (timeout)
-
 import System.Tracy.FFI qualified as FFI
+#endif
+
 import System.Tracy.FFI.Types (Color, PlotFormat(..))
 import System.Tracy.Zone qualified as Zone
 
@@ -137,7 +141,7 @@ frameMarkStart :: MonadIO m => Addr# -> m ()
 #if defined(TRACY_ENABLE)
 frameMarkStart name = liftIO $ FFI.emitFrameMarkStart (ConstPtr $ Ptr name)
 #else
-frameMarkStart = pure ()
+frameMarkStart _name = pure ()
 #endif
 
 {-# INLINE frameMarkEnd #-}
@@ -145,7 +149,7 @@ frameMarkEnd :: MonadIO m => Addr# -> m ()
 #if defined(TRACY_ENABLE)
 frameMarkEnd name = liftIO $ FFI.emitFrameMarkEnd (ConstPtr $ Ptr name)
 #else
-frameMarkEnd = pure ()
+frameMarkEnd _name = pure ()
 #endif
 
 -- TODO: nicer wrapper for emitFrameImage
@@ -167,7 +171,7 @@ messageC color txt = liftIO $
   Text.withCStringLen txt \(txtPtr, txtSz) ->
     FFI.emitMessageC (ConstPtr txtPtr) (fromIntegral txtSz) color 0
 #else
-messageC _txt = pure ()
+messageC _color _txt = pure ()
 #endif
 
 
@@ -195,7 +199,7 @@ plot :: MonadIO m => Addr# -> Double -> m ()
 plot name val = liftIO $
   FFI.emitPlot (ConstPtr (Ptr name)) val
 #else
-plot _name = pure ()
+plot _name _val = pure ()
 #endif
 
 {-# INLINE plotFloat #-}
@@ -204,7 +208,7 @@ plotFloat :: MonadIO m => Addr# -> Float -> m ()
 plotFloat name val = liftIO $
   FFI.emitPlotFloat (ConstPtr (Ptr name)) val
 #else
-plotFloat _name = pure ()
+plotFloat _name _val = pure ()
 #endif
 
 {-# INLINE plotInt #-}
@@ -212,12 +216,13 @@ plotInt :: MonadIO m => Addr# -> Int -> m ()
 plotInt = plotIntegral
 
 {-# INLINE plotIntegral #-}
-plotIntegral :: (Integral a, MonadIO m) => Addr# -> a -> m ()
 #if defined(TRACY_ENABLE)
+plotIntegral :: (Integral a, MonadIO m) => Addr# -> a -> m ()
 plotIntegral name val = liftIO $
   FFI.emitPlotInt (ConstPtr (Ptr name)) (fromIntegral val)
 #else
-plotIntegral _name = pure ()
+plotIntegral :: Monad m => Addr# -> a -> m ()
+plotIntegral _name _val = pure ()
 #endif
 
 {-# INLINE plotConfig #-}

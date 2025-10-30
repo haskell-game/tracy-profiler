@@ -15,7 +15,6 @@ module System.Tracy.Zone
   , allocSrcloc
   ) where
 
-import Control.Exception (bracket)
 import Control.Monad.IO.Class (MonadIO(..))
 import Data.ByteString (ByteString)
 import Data.ByteString.Unsafe (unsafeUseAsCStringLen)
@@ -24,6 +23,9 @@ import Data.Text.Foreign qualified as Text
 import Data.Word
 import Foreign.C.ConstPtr (ConstPtr(..))
 
+#ifdef TRACY_ENABLE
+import Control.Exception (bracket)
+#endif
 import System.Tracy.FFI qualified as FFI
 import System.Tracy.FFI.Types qualified as FFI
 
@@ -48,7 +50,9 @@ withSrcLoc_
   -> ((?zoneCtx :: FFI.TracyCZoneCtx) => IO a)
   -> IO a
 #ifndef TRACY_ENABLE
-withSrcLoc_ _line _file _function action = action
+withSrcLoc_ _line _file _function _col action =
+  let ?zoneCtx = FFI.nullTracyCZoneCtx
+  in action
 #else
 withSrcLoc_ line file function col action = do
   srcloc <- allocSrcloc line file function Nothing col
