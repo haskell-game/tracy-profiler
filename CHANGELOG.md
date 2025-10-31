@@ -13,6 +13,8 @@ and this project adheres to the
   The package takes extra effort to remove traces of itself unless enabled.
 - Added a safety net around zones.
   Controlled with flags: zones_pedantic (disable to silently skip) and zones_unsafe (enable to remove the check).
+- Added `withSrcLoc` which avoids CPP.
+- Renamed `withSrcLoc_` to `withSrcLocImpl`, don't use.
 
 ## 0.1.1.0 - 2025-10-30
 

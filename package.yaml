@@ -1,5 +1,5 @@
 name: tracy-profiler
-version: 0.1.1.0
+version: 0.1.2.0
 github: "haskell-game/tracy-profiler"
 license: BSD-3-Clause
 author: "IC Rainbow"
@@ -63,6 +63,7 @@ flags:
 
 library:
   source-dirs: src
+  ghc-options: -O2
   when:
   - condition: flag(enable)
     cpp-options:

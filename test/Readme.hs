@@ -11,11 +11,12 @@ import qualified Data.Text as Text
 main :: IO ()
 main = Tracy.withProfiler $ do
   Tracy.waitConnected_       -- wait for the tracy-capture to connect
-  Tracy.messageL "hi there"# -- static strings require no copying to be logged
-  mapM_ runFrame [0..600]
+  Tracy.withSrcLoc "main.nowhereInParticular" #f0fa do
+    Tracy.messageL "hi there"# -- static strings require no copying to be logged
+    mapM_ runFrame [0..600]
 
 runFrame :: Int -> IO ()
-runFrame ix = Tracy.withSrcLoc_ __LINE__ __FILE__ "runFrame" #fcc do
+runFrame ix = Tracy.withSrcLoc "runFrame" #fcc do
   Tracy.frameMark_
   let factorial = product [1 .. toInteger ix]
   let !digits = length (show factorial)

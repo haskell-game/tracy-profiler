@@ -3,7 +3,7 @@
 
 module System.Tracy.Zone
   ( -- * Declare zones
-    withSrcLoc_
+    withSrcLoc
 
     -- * Update zone context
   , text
@@ -12,6 +12,7 @@ module System.Tracy.Zone
   , value
 
     -- * Internals
+  , withSrcLocImpl
   , allocSrcloc
   ) where
 
@@ -26,14 +27,19 @@ import Foreign.C.ConstPtr (ConstPtr(..))
 #ifdef TRACY_ENABLE
 import Control.Exception (bracket)
 import Control.Monad.IO.Unlift (MonadUnliftIO, withRunInIO)
+import Data.ByteString.Char8 qualified as ByteString
+import GHC.Stack
+import GHC.Stack.Types qualified as GHC
 
 #ifndef ZONES_UNSAFE
 import Control.Concurrent (isCurrentThreadBound)
 #ifdef ZONES_PEDANTIC
-import Data.ByteString.Char8 qualified as ByteString
 import System.Exit (die)
+-- pedantic
 #endif
+-- !unsafe
 #endif
+-- enable
 #endif
 
 import System.Tracy.FFI qualified as FFI
@@ -44,42 +50,74 @@ import System.Tracy.FFI.Types qualified as FFI
 It will produce a @?zoneCtx@ implicit for the zone functions to work.
 
 @
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedLabels #-} -- for colors
+{-# LANGUAGE OverloadedStrings #-} -- for names
 
 import System.Tracy.Zone qualified as Zone
 
-rendering = Zone.withSrcLoc_ \_\_LINE\_\_ \_\_FILE\_\_ "rendering" #yellow do
+rendering = Zone.withSrcLoc "rendering" #yellow do
   -- ...
 @
+
+NB: Zones can only be used on a bound thread.
+Main thread is safe, but the rest should use one of forkOn/asyncBound/runInBoundThread.
 -}
-{-# INLINE withSrcLoc_ #-}
-withSrcLoc_ ::
-#ifndef TRACY_ENABLE
-  ()
+{-# INLINE withSrcLoc #-}
+withSrcLoc
+#ifdef TRACY_ENABLE
+  :: ( HasCallStack
+     , MonadUnliftIO m
+     )
 #else
-  (MonadUnliftIO m)
+  :: ()
 #endif
-  => Word32
-  -> ByteString
-  -> ByteString
+  => ByteString -- ^ Function name (if used as a top-level wrapper) or section name (in a middle of a @do@ block).
   -> FFI.Color
   -> ((?zoneCtx :: FFI.TracyCZoneCtx) => m a)
   -> m a
 #ifndef TRACY_ENABLE
-withSrcLoc_ _line _file _function _col action =
-  let ?zoneCtx = FFI.nullTracyCZoneCtx
-  in action
+withSrcLoc _function _col action = let ?zoneCtx = FFI.nullTracyCZoneCtx in action
 #else
-withSrcLoc_ line file function col action = withRunInIO \inIO -> do
+withSrcLoc function col action = withRunInIO \inIO -> do
+  -- XXX: breaking into non-public API from GHC.Stack.Types to short-circuit `srcLocFile` stringification
+  case callStack of
+    GHC.PushCallStack _myself GHC.SrcLoc{srcLocStartLine, srcLocFile} _next ->
+      withSrcLocImpl
+        (fromIntegral srcLocStartLine)
+        (ByteString.pack srcLocFile) -- XXX: srcLocFile is originally an Addr#. So pack should be optimized down to FinalPtr too.
+        function -- XXX: IsString instance has an unsafePackLiteral rule for string literals
+        col
+        inIO
+        action
+    _EmptyOrFreeze ->
+      error "withSrcLoc ought to have HasCallStack in context"
+#endif
 
+{- | Allocate SrcLoc and run a Zone with it.
+
+This will copy the strings into a one-time temporary buffer and feed it into emitZoneBeginAlloc.
+You'd better have those bytestrings come from static literals to avoid even more intermediate allocations.
+-}
+{-# INLINE withSrcLocImpl #-}
+withSrcLocImpl
+  :: Word32
+  -> ByteString
+  -> ByteString
+  -> FFI.Color
+  -> (m a -> IO a)
+  -> ((?zoneCtx :: FFI.TracyCZoneCtx) => m a)
+  -> IO a
+#ifndef TRACY_ENABLE
+withSrcLocImpl _line _file _function _col inIO action =
+  inIO $ let ?zoneCtx = FFI.nullTracyCZoneCtx in action
+#else
+withSrcLocImpl line file function col inIO action = do
 #ifdef ZONES_UNSAFE
-  bound <- isCurrentThreadBound
-  putStrLn $ "ZONES_UNSAFE: " <> show bound
-  runZone inIO
+  runZone
 #else
   bound <- isCurrentThreadBound
   if bound then
-    runZone inIO
+    runZone
   else
 #ifdef ZONES_PEDANTIC
     {-
@@ -91,15 +129,17 @@ withSrcLoc_ line file function col action = withRunInIO \inIO -> do
     inIO $ let ?zoneCtx = FFI.nullTracyCZoneCtx in action
 #endif
 
+-- ZONES_UNSAFE
 #endif
   where
     {-# INLINE runZone #-}
-    runZone inIO = do
+    runZone = do
       srcloc <- allocSrcloc line file function Nothing col
       bracket
         (FFI.emitZoneBeginAlloc srcloc 1)
         FFI.emitZoneEnd
         (\ctx -> inIO $ let ?zoneCtx = ctx in action)
+-- TRACY_ENABLE
 #endif
 
 {- | Prepare a single-use location identifier

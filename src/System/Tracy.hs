@@ -10,7 +10,7 @@ module System.Tracy
   , setThreadName
   , appInfo
 
-  , Zone.withSrcLoc_
+  , Zone.withSrcLoc
 
   , frameMark
   , frameMark_
