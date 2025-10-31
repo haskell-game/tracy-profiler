@@ -27,6 +27,12 @@ flags:
       Otherwise the wrappers will be no-ops.
     manual: true
     default: false
+  on_demand:
+    description:
+      Don't generate and keep events if there's no connection.
+      Enable if your libtracyclient has this enabled.
+    manual: true
+    default: false
   manual_lifetime:
     description:
       Manually manage profiler lifetime.
@@ -56,9 +62,9 @@ library:
   - condition: flag(manual_lifetime)
     cpp-options:
     - -DTRACY_MANUAL_LIFETIME
-  - condition: flag(enable)
+  - condition: flag(on_demand)
     cpp-options:
-    - -DTRACY_ENABLE
+    - -DTRACY_ON_DEMAND
   - condition: flag(fibers)
     cpp-options:
     - -DTRACY_FIBERS

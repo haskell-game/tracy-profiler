@@ -45,6 +45,11 @@ flag manual_lifetime
   manual: True
   default: False
 
+flag on_demand
+  description: Don't generate and keep events if there's no connection. Enable if your libtracyclient has this enabled.
+  manual: True
+  default: False
+
 library
   exposed-modules:
       System.Tracy
@@ -84,6 +89,8 @@ library
         stdc++
   if flag(manual_lifetime)
     cpp-options: -DTRACY_MANUAL_LIFETIME
+  if flag(on_demand)
+    cpp-options: -DTRACY_ON_DEMAND
   if flag(fibers)
     cpp-options: -DTRACY_FIBERS
   if flag(has_callstack)
