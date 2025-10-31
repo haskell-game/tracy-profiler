@@ -49,6 +49,17 @@ flags:
       Enable if your libtracyclient has this enabled.
     manual: true
     default: false
+  zones_pedantic:
+    description:
+      Crash when a zone is starting on an unbound thread.
+    manual: true
+    default: true
+  zones_unsafe:
+    description:
+      Skip the bound-thread check for zones.
+      This may crash the profile server with "zone ended twice" error.
+    manual: true
+    default: false
 
 library:
   source-dirs: src
@@ -71,6 +82,12 @@ library:
   - condition: flag(has_callstack)
     cpp-options:
     - -DTRACY_HAS_CALLSTACK
+  - condition: flag(zones_pedantic)
+    cpp-options:
+    - -DZONES_PEDANTIC
+  - condition: flag(zones_unsafe)
+    cpp-options:
+    - -DZONES_UNSAFE
 
   dependencies:
   - bytestring

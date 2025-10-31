@@ -26,6 +26,14 @@ import Foreign.C.ConstPtr (ConstPtr(..))
 #ifdef TRACY_ENABLE
 import Control.Exception (bracket)
 import Control.Monad.IO.Unlift (MonadUnliftIO, withRunInIO)
+
+#ifndef ZONES_UNSAFE
+import Control.Concurrent (isCurrentThreadBound)
+#ifdef ZONES_PEDANTIC
+import Data.ByteString.Char8 qualified as ByteString
+import System.Exit (die)
+#endif
+#endif
 #endif
 
 import System.Tracy.FFI qualified as FFI
@@ -62,12 +70,36 @@ withSrcLoc_ _line _file _function _col action =
   let ?zoneCtx = FFI.nullTracyCZoneCtx
   in action
 #else
-withSrcLoc_ line file function col action = withRunInIO \run -> do
-  srcloc <- allocSrcloc line file function Nothing col
-  bracket
-    (FFI.emitZoneBeginAlloc srcloc 1)
-    FFI.emitZoneEnd
-    (\ctx -> run $ let ?zoneCtx = ctx in action)
+withSrcLoc_ line file function col action = withRunInIO \inIO -> do
+
+#ifdef ZONES_UNSAFE
+  bound <- isCurrentThreadBound
+  putStrLn $ "ZONES_UNSAFE: " <> show bound
+  runZone inIO
+#else
+  bound <- isCurrentThreadBound
+  if bound then
+    runZone inIO
+  else
+#ifdef ZONES_PEDANTIC
+    {-
+      XXX: Will not actually crash the whole program, only the thread.
+      But at least there would be a console notice when this happens.
+    -}
+    die $ ByteString.unpack file <> ":" <> show line <> " Starting a zone on unbound thread"
+#else
+    inIO $ let ?zoneCtx = FFI.nullTracyCZoneCtx in action
+#endif
+
+#endif
+  where
+    {-# INLINE runZone #-}
+    runZone inIO = do
+      srcloc <- allocSrcloc line file function Nothing col
+      bracket
+        (FFI.emitZoneBeginAlloc srcloc 1)
+        FFI.emitZoneEnd
+        (\ctx -> inIO $ let ?zoneCtx = ctx in action)
 #endif
 
 {- | Prepare a single-use location identifier
