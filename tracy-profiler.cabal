@@ -70,8 +70,6 @@ library
       StrictData
       ImplicitParams
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
-  extra-libraries:
-      TracyClient
   build-depends:
       base >=4.16 && <5
     , bytestring
@@ -79,10 +77,13 @@ library
     , unliftio-core
     , webcolor-labels
   default-language: GHC2021
-  if flag(manual_lifetime)
-    cpp-options: -DTRACY_MANUAL_LIFETIME
   if flag(enable)
     cpp-options: -DTRACY_ENABLE
+    extra-libraries:
+        TracyClient
+        stdc++
+  if flag(manual_lifetime)
+    cpp-options: -DTRACY_MANUAL_LIFETIME
   if flag(fibers)
     cpp-options: -DTRACY_FIBERS
   if flag(has_callstack)

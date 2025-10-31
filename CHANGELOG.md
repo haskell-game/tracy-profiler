@@ -9,6 +9,8 @@ and this project adheres to the
 ## Unreleased
 
 - Fixed byte order in IsLabel Color instance.
+- Move library dependencies under a flag.
+  The package takes extra effort to remove traces of itself unless enabled.
 
 ## 0.1.1.0 - 2025-10-30
 

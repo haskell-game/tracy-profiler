@@ -46,9 +46,13 @@ flags:
 
 library:
   source-dirs: src
-  extra-libraries:
-  - TracyClient
   when:
+  - condition: flag(enable)
+    cpp-options:
+    - -DTRACY_ENABLE
+    extra-libraries:
+    - TracyClient
+    - stdc++
   - condition: flag(manual_lifetime)
     cpp-options:
     - -DTRACY_MANUAL_LIFETIME
