@@ -9,12 +9,24 @@ Haskell bindings for [Tracy frame profiler](https://github.com/wolfpld/tracy).
 You can install the prebuilt package from your distribution if it has one:
 
 ```sh
-sudo apt install libtracy-dev tracy-capture
+sudo apt install libtracy-dev tracy-capture tracy-profiler
 ```
 
 Or you can [download] and build one yourself and point your project to it:
 
 [download]: https://github.com/wolfpld/tracy/
+
+```sh
+mkdir -p upstream
+cd upstream && git clone --recursive https://github.com/wolfpld/tracy
+cmake -B upstream/tracy/build -S upstream/tracy \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DTRACY_ONLY_LOCALHOST=ON \
+  -DTRACY_ENABLE=ON \
+  -DTRACY_MANUAL_LIFETIME=ON \
+  -DTRACY_DELAYED_INIT=ON
+cmake --build upstream/tracy/build --config Release
+```
 
 ```yaml
 extra-lib-dirs:
@@ -26,7 +38,7 @@ extra-include-dirs:
 This way you can customize configuration.
 Make sure you update package flags to match.
 
-Either way, you have to ensure that `tracy-capture` is built with the same version.
+Either way, you have to ensure that `tracy-capture`/`tracy-profiler` is built with the same version.
 Otherwise it will connect and immediately refuse to record anything.
 
 ### Flags
