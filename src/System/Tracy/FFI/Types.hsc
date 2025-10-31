@@ -18,9 +18,9 @@ instance IsWebColorAlpha s => IsLabel s Color where
   fromLabel = webColorAlpha @s \r g b a ->
     Color $
       shiftL (fromIntegral a) 24 .|.
-      shiftL (fromIntegral b) 16 .|.
+      shiftL (fromIntegral r) 16 .|.
       shiftL (fromIntegral g)  8 .|.
-      fromIntegral r
+      fromIntegral b
 
 newtype SrcLoc = SrcLoc Word64
   deriving (Show)
