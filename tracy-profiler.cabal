@@ -65,6 +65,7 @@ library
       System.Tracy
       System.Tracy.FFI
       System.Tracy.FFI.Types
+      System.Tracy.Memory
       System.Tracy.Zone
   other-modules:
       Paths_tracy_profiler
