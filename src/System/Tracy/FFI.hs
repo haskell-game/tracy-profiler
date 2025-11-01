@@ -153,16 +153,65 @@ foreign import ccall unsafe "___tracy_connected"
 
 ----------------------------------------------------------------
 
-{-
-TRACY_API void ___tracy_emit_memory_alloc( const void* ptr, size_t size, int secure );
-TRACY_API void ___tracy_emit_memory_alloc_callstack( const void* ptr, size_t size, int depth, int secure );
-TRACY_API void ___tracy_emit_memory_free( const void* ptr, int secure );
-TRACY_API void ___tracy_emit_memory_free_callstack( const void* ptr, int depth, int secure );
-TRACY_API void ___tracy_emit_memory_alloc_named( const void* ptr, size_t size, int secure, const char* name );
-TRACY_API void ___tracy_emit_memory_alloc_callstack_named( const void* ptr, size_t size, int depth, int secure, const char* name );
-TRACY_API void ___tracy_emit_memory_free_named( const void* ptr, int secure, const char* name );
-TRACY_API void ___tracy_emit_memory_free_callstack_named( const void* ptr, int depth, int secure, const char* name );
--}
+foreign import ccall unsafe "___tracy_emit_memory_alloc"
+  emitMemoryAlloc
+    :: ConstPtr () -- ^ ptr
+    -> CSize       -- ^ size
+    -> CInt        -- ^ secure
+    -> IO ()
+
+foreign import ccall unsafe "___tracy_emit_memory_alloc_callstack"
+  emitMemoryAllocCallstack
+    :: ConstPtr () -- ^ ptr
+    -> CSize       -- ^ size
+    -> CInt        -- ^ depth
+    -> CInt        -- ^ secure
+    -> IO ()
+
+foreign import ccall unsafe "___tracy_emit_memory_free"
+  emitMemoryFree
+    :: ConstPtr () -- ^ ptr
+    -> CInt        -- ^ secure
+    -> IO ()
+
+foreign import ccall unsafe "___tracy_emit_memory_free_callstack"
+  emitMemoryFreeCallstack
+    :: ConstPtr () -- ^ ptr
+    -> CInt        -- ^ depth
+    -> CInt        -- ^ secure
+    -> IO ()
+
+foreign import ccall unsafe "___tracy_emit_memory_alloc_named"
+  emitMemoryAllocNamed
+    :: ConstPtr ()    -- ^ ptr
+    -> CSize          -- ^ size
+    -> CInt           -- ^ secure
+    -> ConstPtr CChar -- ^ name
+    -> IO ()
+
+foreign import ccall unsafe "___tracy_emit_memory_alloc_callstack_named"
+  emitMemoryAllocCallstackNamed
+    :: ConstPtr ()    -- ^ ptr
+    -> CSize          -- ^ size
+    -> CInt           -- ^ depth
+    -> CInt           -- ^ secure
+    -> ConstPtr CChar -- ^ name
+    -> IO ()
+
+foreign import ccall unsafe "___tracy_emit_memory_free_named"
+  emitMemoryFreeNamed
+    :: ConstPtr ()    -- ^ ptr
+    -> CInt           -- ^ secure
+    -> ConstPtr CChar -- ^ name
+    -> IO ()
+
+foreign import ccall unsafe "___tracy_emit_memory_free_callstack_named"
+  emitMemoryFreeCallstackNamed
+    :: ConstPtr ()    -- ^ ptr
+    -> CInt           -- ^ depth
+    -> CInt           -- ^ secure
+    -> ConstPtr CChar -- ^ name
+    -> IO ()
 
 ----------------------------------------------------------------
 
