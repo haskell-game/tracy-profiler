@@ -31,7 +31,7 @@ data SourceLocationData = SourceLocationData
   , function :: Ptr CChar
   , file     :: Ptr CChar
   , line     :: Word32
-  , color    :: Word32
+  , color    :: Color
   }
 
 instance Storable SourceLocationData where
