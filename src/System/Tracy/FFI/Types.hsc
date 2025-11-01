@@ -10,6 +10,11 @@ import GHC.OverloadedLabels
 #define TRACY_ENABLE
 #include <tracy/TracyC.h>
 
+{- | Packed 32-bit color
+
+Hex literals can be used as @0xRRGGBB@.
+Alternatively, "webcolors" notation is supported via labels: @#rgb@, @#rrggbb@, even some @#red@.
+-}
 newtype Color = Color Word32
   deriving (Show)
   deriving newtype (Eq, Ord, Storable, Num)
