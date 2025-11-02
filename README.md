@@ -12,27 +12,21 @@ You can install the prebuilt package from your distribution if it has one:
 sudo apt install libtracy-dev tracy-capture tracy-profiler
 ```
 
-Or you can [download] and build one yourself and point your project to it:
-
-[download]: https://github.com/wolfpld/tracy/
-
-```sh
-mkdir -p upstream
-cd upstream && git clone --recursive https://github.com/wolfpld/tracy
-cmake -B upstream/tracy/build -S upstream/tracy \
-  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-  -DTRACY_ONLY_LOCALHOST=ON \
-  -DTRACY_ENABLE=ON \
-  -DTRACY_MANUAL_LIFETIME=ON \
-  -DTRACY_DELAYED_INIT=ON
-cmake --build upstream/tracy/build --config Release
-```
+Or you can download and build one yourself and point your project to it:
 
 ```yaml
+# stack.yaml
 extra-lib-dirs:
-- upstream/tracy/build
+- upstream/_build/library
 extra-include-dirs:
 - upstream/tracy/public/tracy
+```
+
+You can use the provided Makefile that will do the thing:
+```sh
+make all # fetch and build stuff
+make test # run the example
+_build/profiler/tracy-profiler & disown # launch the profiler GUI
 ```
 
 This way you can customize configuration.

@@ -4,3 +4,4 @@ stack.yaml.lock
 *~
 *.hs_
 *.tracy
+upstream/tracy
