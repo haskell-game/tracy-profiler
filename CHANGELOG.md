@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to the
 [Haskell Package Versioning Policy](https://pvp.haskell.org/).
 
+## 0.1.2.1 - 2025-11-02
+
+- Fix `-enable` build without having libtracyclient installed.
+
 ## 0.1.2.0 - 2025-11-01
 
 - Fixed byte order in IsLabel Color instance.

@@ -18,16 +18,16 @@ module System.Tracy.Zone
 
 import Control.Monad.IO.Class (MonadIO(..))
 import Data.ByteString (ByteString)
-import Data.ByteString.Unsafe (unsafeUseAsCStringLen)
 import Data.Text (Text)
-import Data.Text.Foreign qualified as Text
 import Data.Word
-import Foreign.C.ConstPtr (ConstPtr(..))
 
 #ifdef TRACY_ENABLE
 import Control.Exception (bracket)
 import Control.Monad.IO.Unlift (MonadUnliftIO, withRunInIO)
 import Data.ByteString.Char8 qualified as ByteString
+import Data.ByteString.Unsafe (unsafeUseAsCStringLen)
+import Data.Text.Foreign qualified as Text
+import Foreign.C.ConstPtr (ConstPtr(..))
 import GHC.Stack
 import GHC.Stack.Types qualified as GHC
 
@@ -39,10 +39,11 @@ import System.Exit (die)
 #endif
 -- !unsafe
 #endif
+
+import System.Tracy.FFI qualified as FFI
 -- enable
 #endif
 
-import System.Tracy.FFI qualified as FFI
 import System.Tracy.FFI.Types qualified as FFI
 
 {- | Allocate SrcLoc and run a Zone with it.
@@ -159,6 +160,9 @@ allocSrcloc
   -> Maybe ByteString
   -> FFI.Color
   -> IO FFI.SrcLoc
+#ifndef TRACY_ENABLE
+allocSrcloc _line _source _function _name _col = pure $ FFI.SrcLoc 0
+#else
 allocSrcloc line source function name_ col =
   unsafeUseAsCStringLen source \(sourcePtr, sourceSz) ->
   unsafeUseAsCStringLen function \(functionPtr, functionSz) ->
@@ -177,6 +181,7 @@ allocSrcloc line source function name_ col =
             (ConstPtr functionPtr) (fromIntegral functionSz)
             (ConstPtr namePtr) (fromIntegral nameSz)
             col
+#endif
 
 {- TODO: Wrap emitZoneBegin
 
@@ -189,21 +194,41 @@ Otherwise it's a copying galore and Tracy may fail to deduplicate the locations.
 -}
 
 {-# INLINE text #-}
+#ifndef TRACY_ENABLE
+text :: MonadIO m => Text -> m ()
+text _txt = pure ()
+#else
 text :: (MonadIO m, ?zoneCtx :: FFI.TracyCZoneCtx) => Text -> m ()
 text txt = liftIO $
   Text.withCStringLen txt \(txtPtr, txtSz) ->
     FFI.emitZoneText ?zoneCtx (ConstPtr txtPtr) (fromIntegral txtSz)
+#endif
 
 {-# INLINE name #-}
+#ifndef TRACY_ENABLE
+name :: MonadIO m => Text -> m ()
+name _txt = pure ()
+#else
 name :: (MonadIO m, ?zoneCtx :: FFI.TracyCZoneCtx) => Text -> m ()
 name txt = liftIO $
   Text.withCStringLen txt \(txtPtr, txtSz) ->
     FFI.emitZoneName ?zoneCtx (ConstPtr txtPtr) (fromIntegral txtSz)
+#endif
 
 {-# INLINE color #-}
+#ifndef TRACY_ENABLE
+color :: MonadIO m => FFI.Color -> m ()
+color _col = pure ()
+#else
 color :: (MonadIO m, ?zoneCtx :: FFI.TracyCZoneCtx) => FFI.Color -> m ()
 color col = liftIO $ FFI.emitZoneColor ?zoneCtx col
+#endif
 
 {-# INLINE value #-}
+#ifndef TRACY_ENABLE
+value :: MonadIO m => Word64 -> m ()
+value _val = pure ()
+#else
 value :: (MonadIO m, ?zoneCtx :: FFI.TracyCZoneCtx) => Word64 -> m ()
 value val = liftIO $ FFI.emitZoneValue ?zoneCtx val
+#endif

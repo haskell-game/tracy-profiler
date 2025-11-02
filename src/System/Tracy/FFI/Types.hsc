@@ -7,9 +7,6 @@ import Foreign.C
 import WebColor.Labels
 import GHC.OverloadedLabels
 
-#define TRACY_ENABLE
-#include <tracy/TracyC.h>
-
 {- | Packed 32-bit color
 
 Hex literals can be used as @0xRRGGBB@.
@@ -39,6 +36,9 @@ data SourceLocationData = SourceLocationData
   , color    :: Color
   }
 
+#ifdef TRACY_ENABLE
+#include "TracyC.h"
+
 instance Storable SourceLocationData where
   sizeOf (~_undef) = (#size struct ___tracy_source_location_data)
 
@@ -58,6 +58,8 @@ instance Storable SourceLocationData where
     (#poke struct ___tracy_source_location_data, file) ptr file
     (#poke struct ___tracy_source_location_data, line) ptr line
     (#poke struct ___tracy_source_location_data, color) ptr color
+
+#endif
 
 newtype TracyCZoneCtx = TracyCZoneCtx (Ptr TracyCZoneCtx)
   deriving (Show)
