@@ -1,4 +1,8 @@
 packages: .
 
 package tracy-profiler
-  flags: -manual_lifetime +enable
+  flags: +enable +manual_lifetime
+
+-- XXX: cabal doesn't handle relative paths
+-- extra-include-dirs: ./upstream/tracy/public/tracy
+-- extra-lib-dirs: ./upstream/_build/library
