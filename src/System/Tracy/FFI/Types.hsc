@@ -37,7 +37,7 @@ data SourceLocationData = SourceLocationData
   }
 
 #ifdef TRACY_ENABLE
-#include "TracyC.h"
+#include "tracy/tracy/TracyC.h"
 
 instance Storable SourceLocationData where
   sizeOf (~_undef) = (#size struct ___tracy_source_location_data)

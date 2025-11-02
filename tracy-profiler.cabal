@@ -93,10 +93,11 @@ library
     , unliftio-core
     , webcolor-labels
   default-language: GHC2021
+  pkgconfig-depends:
+      tracy
   if flag(enable)
     cpp-options: -DTRACY_ENABLE
     extra-libraries:
-        TracyClient
         stdc++
   if flag(manual_lifetime)
     cpp-options: -DTRACY_MANUAL_LIFETIME
