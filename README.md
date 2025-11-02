@@ -57,7 +57,6 @@ flags:
 Use the functions from `System.Tracy` and `System.Tracy.Zone` to collect data:
 
 ```haskell
-{-# LANGUAGE CPP #-}               -- __LINE__ and __FILE__ macros
 {-# LANGUAGE MagicHash #-}         -- "static strings"#
 {-# LANGUAGE OverloadedLabels #-}  -- #fuchsia colors
 {-# LANGUAGE OverloadedStrings #-} -- "yes"

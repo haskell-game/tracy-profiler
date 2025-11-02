@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}               -- __LINE__ and __FILE__ macros
 {-# LANGUAGE MagicHash #-}         -- "static strings"#
 {-# LANGUAGE OverloadedLabels #-}  -- #fuchsia colors
 {-# LANGUAGE OverloadedStrings #-} -- "yes"
