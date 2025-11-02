@@ -6,12 +6,14 @@ packages:
 extra-deps:
 - webcolor-labels-0.1.0.0
 
-# extra-lib-dirs:
-# - upstream/tracy/build
+extra-lib-dirs:
+- upstream/_build/library
+extra-include-dirs:
+- upstream/tracy/public/tracy
 
 flags:
   tracy-profiler:
     enable: true
-    manual_lifetime: false
+    manual_lifetime: true
 
 system-ghc: true
