@@ -4,6 +4,10 @@
 {-| Tracing memory allocations
 
 https://github.com/wolfpld/tracy/releases/download/v0.15.0/tracy.pdf
+
+Events have to reach Tracy in the order the allocations and frees really happened.
+If several threads allocate at once, hold a lock across each allocation or free and its report.
+Otherwise a freed address can be handed out again and reported before its free is, which fails the capture.
 -}
 
 module System.Tracy.Memory
