@@ -26,7 +26,9 @@ Now targets Tracy 0.15. The library, `tracy-capture` and `tracy-profiler` must a
   The bound-thread check only applies when the runtime has bound threads.
   Zones from different Haskell threads must not overlap there, or the capture will fail.
 - Fixed the Makefile build paths and pinned its clone to the supported Tracy release.
-- The Makefile now builds the client library in release mode.
+- The Makefile now builds everything in release mode by default, with `DEBUG=1` for a debug build in `upstream/_build-debug`.
+- The Makefile now builds the client library without Tracy's crash handler.
+  The handler treats `SIGPIPE` as a crash, and GHC's threaded runtime sends that signal to cancel `interruptible` foreign calls, which aborted the program while a profiler was connected.
   Existing checkouts need `make clean && make all` to pick this up.
 
 ## 0.1.2.1 - 2025-11-02
