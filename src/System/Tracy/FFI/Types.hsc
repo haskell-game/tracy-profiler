@@ -61,12 +61,23 @@ instance Storable SourceLocationData where
 
 #endif
 
+#ifdef TRACY_ON_DEMAND
+data TracyCZoneCtx = TracyCZoneCtx
+  { idAndActive  :: Word64
+  , connectionId :: Word64
+  }
+  deriving (Eq, Ord, Show)
+
+nullTracyCZoneCtx :: TracyCZoneCtx
+nullTracyCZoneCtx = TracyCZoneCtx 0 0
+#else
 newtype TracyCZoneCtx = TracyCZoneCtx (Ptr TracyCZoneCtx)
   deriving (Show)
   deriving newtype (Eq, Ord, Storable)
 
 nullTracyCZoneCtx :: TracyCZoneCtx
 nullTracyCZoneCtx = TracyCZoneCtx nullPtr
+#endif
 
 data PlotFormat
   = PlotFormatNumber -- ^ values will be displayed as plain numbers.
@@ -74,3 +85,18 @@ data PlotFormat
   | PlotFormatPercentage -- ^ values will be displayed as percentage (with value @100@ being equal to 100%).
   | PlotFormatWatt
   deriving (Eq, Ord, Show, Enum, Bounded)
+
+data MessageSeverity
+  = MessageSeverityTrace
+  | MessageSeverityDebug
+  | MessageSeverityInfo
+  | MessageSeverityWarning
+  | MessageSeverityError
+  | MessageSeverityFatal
+  deriving (Eq, Ord, Show, Enum, Bounded)
+
+maxTextBytes :: Int
+maxTextBytes = 65534
+
+clampTextBytes :: Int -> CSize
+clampTextBytes = fromIntegral . min maxTextBytes

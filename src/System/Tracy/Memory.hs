@@ -3,7 +3,7 @@
 
 {-| Tracing memory allocations
 
-https://github.com/wolfpld/tracy/blob/master/manual/tracy.md#memory-profiling-memoryprofiling
+https://github.com/wolfpld/tracy/releases/download/v0.15.0/tracy.pdf
 -}
 
 module System.Tracy.Memory
@@ -30,55 +30,51 @@ import System.Tracy.FFI qualified as FFI
 {-# INLINE alloc #-}
 alloc
   :: MonadIO m
-  => Bool  -- ^ secure
-  -> Ptr a -- ^ address to register
+  => Ptr a -- ^ address to register
   -> Int   -- ^ size
   -> m ()
 #ifdef TRACY_ENABLE
-alloc secure ptr size =
-  liftIO $ FFI.emitMemoryAlloc (ConstPtr $ castPtr ptr) (fromIntegral size) (fromIntegral $ fromEnum secure)
+alloc ptr size =
+  liftIO $ FFI.emitMemoryAlloc (ConstPtr $ castPtr ptr) (fromIntegral size)
 #else
-alloc _secure _ptr _size = pure ()
+alloc _ptr _size = pure ()
 #endif
 
 {-# INLINE free #-}
 free
   :: MonadIO m
-  => Bool  -- ^ secure
-  -> Ptr a -- ^ address that was registered
+  => Ptr a -- ^ address that was registered
   -> m ()
 #ifdef TRACY_ENABLE
-free secure ptr =
-  liftIO $ FFI.emitMemoryFree (ConstPtr $ castPtr ptr) (fromIntegral $ fromEnum secure)
+free ptr =
+  liftIO $ FFI.emitMemoryFree (ConstPtr $ castPtr ptr)
 #else
-free _secure _ptr = pure ()
+free _ptr = pure ()
 #endif
 
 {-# INLINE allocNamed #-}
 allocNamed
   :: MonadIO m
-  => Bool  -- ^ secure
-  -> Ptr a -- ^ address to register
+  => Ptr a -- ^ address to register
   -> Int   -- ^ size
   -> Addr# -- ^ memory pool name
   -> m ()
 #ifdef TRACY_ENABLE
-allocNamed secure ptr size name =
-  liftIO $ FFI.emitMemoryAllocNamed (ConstPtr $ castPtr ptr) (fromIntegral size) (fromIntegral $ fromEnum secure) (ConstPtr $ Ptr name)
+allocNamed ptr size name =
+  liftIO $ FFI.emitMemoryAllocNamed (ConstPtr $ castPtr ptr) (fromIntegral size) (ConstPtr $ Ptr name)
 #else
-allocNamed _secure _ptr _size _name = pure ()
+allocNamed _ptr _size _name = pure ()
 #endif
 
 {-# INLINE freeNamed #-}
 freeNamed
   :: MonadIO m
-  => Bool  -- ^ secure
-  -> Ptr a -- ^ address that was registered
+  => Ptr a -- ^ address that was registered
   -> Addr# -- ^ memory pool name
   -> m ()
 #ifdef TRACY_ENABLE
-freeNamed secure ptr name =
-  liftIO $ FFI.emitMemoryFreeNamed (ConstPtr $ castPtr ptr) (fromIntegral $ fromEnum secure) (ConstPtr $ Ptr name)
+freeNamed ptr name =
+  liftIO $ FFI.emitMemoryFreeNamed (ConstPtr $ castPtr ptr) (ConstPtr $ Ptr name)
 #else
-freeNamed _secure _ptr _name = pure ()
+freeNamed _ptr _name = pure ()
 #endif
