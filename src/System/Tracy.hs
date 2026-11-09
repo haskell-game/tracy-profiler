@@ -44,6 +44,7 @@ import GHC.Exts (Addr#)
 
 #if defined(TRACY_ENABLE)
 import Control.Concurrent (threadDelay)
+import Data.Int (Int8)
 import Data.Maybe (fromMaybe)
 import Data.Text.Foreign qualified as Text
 import Foreign (nullPtr)
@@ -51,6 +52,7 @@ import Foreign.C.ConstPtr (ConstPtr(..))
 import GHC.Exts(Ptr(..))
 import System.Timeout (timeout)
 import System.Tracy.FFI qualified as FFI
+import System.Tracy.FFI.Types (MessageSeverity(..), clampTextBytes)
 #endif
 
 import System.Tracy.FFI.Types (Color, PlotFormat(..))
@@ -157,41 +159,35 @@ frameMarkEnd _name = pure ()
 
 -- TODO: nicer wrapper for emitFrameImage
 
+#if defined(TRACY_ENABLE)
+{-# INLINE severityInfo #-}
+severityInfo :: Int8
+severityInfo = fromIntegral $ fromEnum MessageSeverityInfo
+#endif
+
 {-# INLINE message #-}
 message :: MonadIO m => Text -> m ()
-#if defined(TRACY_ENABLE)
-message txt = liftIO $
-  Text.withCStringLen txt \(txtPtr, txtSz) ->
-    FFI.emitMessage (ConstPtr txtPtr) (fromIntegral txtSz) 0
-#else
-message _txt = pure ()
-#endif
+message = messageC 0
 
 {-# INLINE messageC #-}
 messageC :: MonadIO m => Color -> Text -> m ()
 #if defined(TRACY_ENABLE)
 messageC color txt = liftIO $
   Text.withCStringLen txt \(txtPtr, txtSz) ->
-    FFI.emitMessageC (ConstPtr txtPtr) (fromIntegral txtSz) color 0
+    FFI.emitLogString severityInfo color 0 (clampTextBytes txtSz) (ConstPtr txtPtr)
 #else
 messageC _color _txt = pure ()
 #endif
 
-
 {-# INLINE messageL #-}
 messageL :: MonadIO m => Addr# -> m ()
-#if defined(TRACY_ENABLE)
-messageL txt = liftIO $
-  FFI.emitMessageL (ConstPtr (Ptr txt)) 0
-#else
-messageL _txt = pure ()
-#endif
+messageL = messageLC 0
 
 {-# INLINE messageLC #-}
 messageLC :: MonadIO m => Color -> Addr# -> m ()
 #if defined(TRACY_ENABLE)
 messageLC color txt = liftIO $
-  FFI.emitMessageLC (ConstPtr (Ptr txt)) color 0
+  FFI.emitLogStringL severityInfo color 0 (ConstPtr (Ptr txt))
 #else
 messageLC _color _txt = pure ()
 #endif
@@ -260,7 +256,7 @@ appInfo :: MonadIO m => Text -> m ()
 #if defined(TRACY_ENABLE)
 appInfo txt = liftIO $
   Text.withCStringLen txt \(txtPtr, txtSz) ->
-    FFI.emitMessageAppinfo (ConstPtr txtPtr) (fromIntegral txtSz)
+    FFI.emitMessageAppinfo (ConstPtr txtPtr) (clampTextBytes txtSz)
 #else
 appInfo _txt = pure ()
 #endif
@@ -278,8 +274,7 @@ fiberEnter _name = pure ()
 {-# INLINE fiberLeave #-}
 fiberLeave :: MonadIO m => m ()
 #if defined(TRACY_ENABLE)
-fiberLeave name val = liftIO $
-  FFI.fiberLeave
+fiberLeave = liftIO FFI.fiberLeave
 #else
 fiberLeave = pure ()
 #endif

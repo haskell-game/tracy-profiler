@@ -32,7 +32,7 @@ import GHC.Stack
 import GHC.Stack.Types qualified as GHC
 
 #ifndef ZONES_UNSAFE
-import Control.Concurrent (isCurrentThreadBound)
+import Control.Concurrent (isCurrentThreadBound, rtsSupportsBoundThreads)
 #ifdef ZONES_PEDANTIC
 import System.Exit (die)
 -- pedantic
@@ -60,8 +60,11 @@ rendering = Zone.withSrcLoc "rendering" #yellow do
   -- ...
 @
 
-NB: Zones can only be used on a bound thread.
-Main thread is safe, but the rest should use one of forkOn/asyncBound/runInBoundThread.
+NB: With the threaded runtime, zones can only be used on a bound thread.
+Main thread is safe, but the rest should use one of forkOS/asyncBound/runInBoundThread.
+
+The non-threaded runtime has no bound threads and runs everything on a single OS thread, so the check is skipped there.
+Zones from different Haskell threads must not overlap in that case, or the capture will fail.
 -}
 {-# INLINE withSrcLoc #-}
 withSrcLoc
@@ -116,8 +119,8 @@ withSrcLocImpl line file function col inIO action = do
 #ifdef ZONES_UNSAFE
   runZone
 #else
-  bound <- isCurrentThreadBound
-  if bound then
+  onStableOsThread <- if rtsSupportsBoundThreads then isCurrentThreadBound else pure True
+  if onStableOsThread then
     runZone
   else
 #ifdef ZONES_PEDANTIC
@@ -201,7 +204,7 @@ text _txt = pure ()
 text :: (MonadIO m, ?zoneCtx :: FFI.TracyCZoneCtx) => Text -> m ()
 text txt = liftIO $
   Text.withCStringLen txt \(txtPtr, txtSz) ->
-    FFI.emitZoneText ?zoneCtx (ConstPtr txtPtr) (fromIntegral txtSz)
+    FFI.emitZoneText ?zoneCtx (ConstPtr txtPtr) (FFI.clampTextBytes txtSz)
 #endif
 
 {-# INLINE name #-}
@@ -212,7 +215,7 @@ name _txt = pure ()
 name :: (MonadIO m, ?zoneCtx :: FFI.TracyCZoneCtx) => Text -> m ()
 name txt = liftIO $
   Text.withCStringLen txt \(txtPtr, txtSz) ->
-    FFI.emitZoneName ?zoneCtx (ConstPtr txtPtr) (fromIntegral txtSz)
+    FFI.emitZoneName ?zoneCtx (ConstPtr txtPtr) (FFI.clampTextBytes txtSz)
 #endif
 
 {-# INLINE color #-}

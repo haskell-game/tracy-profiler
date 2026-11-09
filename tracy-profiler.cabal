@@ -1,11 +1,11 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.38.1.
+-- This file has been generated from package.yaml by hpack version 0.39.6.
 --
 -- see: https://github.com/sol/hpack
 
 name:           tracy-profiler
-version:        0.1.2.1
+version:        0.2.0.0
 synopsis:       Haskell bindings for Tracy frame profiler
 category:       Profiling
 homepage:       https://github.com/haskell-game/tracy-profiler#readme
@@ -87,7 +87,7 @@ library
       ImplicitParams
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -O2
   build-depends:
-      base >=4.16 && <5
+      base >=4.18 && <5
     , bytestring
     , text >=2.0 && <3
     , unliftio-core
@@ -98,10 +98,13 @@ library
     extra-libraries:
         TracyClient
         stdc++
+    if flag(on_demand)
+      cpp-options: -DTRACY_ON_DEMAND
+      cc-options: -DTRACY_ENABLE -DTRACY_ON_DEMAND
+      c-sources:
+          cbits/zone_shim.c
   if flag(manual_lifetime)
     cpp-options: -DTRACY_MANUAL_LIFETIME
-  if flag(on_demand)
-    cpp-options: -DTRACY_ON_DEMAND
   if flag(fibers)
     cpp-options: -DTRACY_FIBERS
   if flag(has_callstack)
@@ -134,7 +137,7 @@ test-suite tracy-profiler-test
       ImplicitParams
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.16 && <5
+      base >=4.18 && <5
     , random
     , text
     , tracy-profiler
