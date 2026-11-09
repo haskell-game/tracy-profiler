@@ -32,8 +32,17 @@ make test # run the example
 upstream/_build/profiler/tracy-profiler & disown # launch the profiler GUI
 ```
 
+Everything is built in release mode.
+Add `DEBUG=1` to any of those `make` commands for a debug build in `upstream/_build-debug`, which keeps Tracy's assertions on.
+To use the debug library in your own project, point `extra-lib-dirs` at `upstream/_build-debug/library`.
+
 This way you can customize configuration.
 Make sure you update package flags to match.
+
+The Makefile builds the library with `TRACY_NO_CRASH_HANDLER`, so the viewer won't get crash reports.
+Tracy's crash handler treats `SIGPIPE` as a crash, but GHC's threaded runtime sends that signal to cancel `interruptible` foreign calls.
+With the handler in place, `killThread` on a thread inside such a call aborts the program while a profiler is connected.
+Any library built with the handler has this problem, so check how a distribution package was built.
 
 Either way, you have to ensure that `tracy-capture`/`tracy-profiler` is built with the same version.
 Otherwise it will connect and immediately refuse to record anything.

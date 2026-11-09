@@ -1,5 +1,6 @@
 dist-newstyle/
 .stack-work/
+.stack-work-debug/
 stack.yaml.lock
 *~
 *.hs_
