@@ -18,31 +18,43 @@ Now targets Tracy 0.15. The library, `tracy-capture` and `tracy-profiler` must a
 - `System.Tracy.FFI.emitMessage`, `emitMessageL`, `emitMessageC` and `emitMessageLC` are replaced by `emitLogString` and `emitLogStringL`, following the upstream API.
   The `System.Tracy.message*` wrappers keep their types and log at the info severity.
 - `System.Tracy.FFI.TracyCZoneCtx` has a different representation under the `on_demand` flag.
+- `System.Tracy.FFI.connected` now returns `Int32`, matching the C function.
+- `System.Tracy.FFI.profilerStarted` is now an `IO Int32` action.
+  The old pure `Int` could keep its first result under `manual_lifetime` even after the profiler started or stopped.
 - Raised the `base` lower bound to 4.18, the first release with `Foreign.C.ConstPtr`.
 
 ### Added
 
-- `logString` and `logStringL`, which take a `MessageSeverity`.
+- `logString` and `logStringL` take a `MessageSeverity`.
 - `System.Tracy.Section`, `System.Tracy.Lock`, `System.Tracy.SharedLock` and `System.Tracy.SourceLocation`.
 - `getTime`, `beginSamplingProfiling`, `endSamplingProfiling` and `System.Tracy.Memory.discard`.
-- `enabled`, which tells whether the package was built with the `enable` flag.
+- `enabled` tells whether the package was built with the `enable` flag.
+- `System.Tracy.Gpu` for GPU contexts and zones.
+  The GPU functions in `System.Tracy.FFI` go through a small C shim.
+  The GHC FFI can't pass the structures the C API takes by value.
+- `System.Tracy.Zone.withSourceLocation` runs a zone from a location made once with `newSourceLocation`.
+- `frameImage` attaches a screenshot to a frame.
 - `make DEBUG=1` builds everything in debug mode in `upstream/_build-debug`.
 
 ### Fixed
 
-- `on_demand` builds now go through a small C shim, because since Tracy 0.14 the zone context in that mode has a size the GHC FFI can't pass by value.
+- `on_demand` builds now go through a small C shim.
+  Since Tracy 0.14, the zone context in that mode has a size the GHC FFI can't pass by value.
 - Zones now work on the non-threaded RTS without `zones_unsafe`.
   The bound-thread check only applies when the runtime has bound threads.
-  Zones from different Haskell threads must not overlap there, or the capture will fail.
+  A capture fails if zones from different Haskell threads overlap there.
 - Text given to `message`, `messageC`, `appInfo`, `Zone.text` and `Zone.name` is now cut at 65534 bytes instead of tripping a Tracy assertion.
   The cut may split a multibyte character.
 - `fiberLeave` now compiles with `fibers` and `enable` both set.
 - `System.Tracy.FFI.Types` no longer goes stale after changing the `enable` or `on_demand` flags in an existing build directory.
-- The Makefile's paths now match where it clones Tracy, and the clone is pinned to the supported release.
+- The Makefile's paths now match where it clones Tracy.
+  The clone is pinned to the supported release.
 - The Makefile now builds in release mode by default.
-  Its `--config Release` had no effect with CMake's Makefile generator, so the client library was built without optimizations.
+  CMake's Makefile generator ignored its `--config Release` and built the client library without optimizations.
 - The Makefile now builds the client library without Tracy's crash handler.
-  The handler treats `SIGPIPE` as a crash, and GHC's threaded runtime sends that signal to cancel `interruptible` foreign calls, which aborted the program while a profiler was connected.
+  The handler treats `SIGPIPE` as a crash.
+  GHC's threaded runtime sends that signal to cancel `interruptible` foreign calls.
+  This aborted the program while a profiler was connected.
   Existing checkouts need `make clean && make all` to pick this up.
 
 ## 0.1.2.1 - 2025-11-02

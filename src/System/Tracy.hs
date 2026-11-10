@@ -21,6 +21,7 @@ module System.Tracy
   , frameMark_
   , frameMarkStart
   , frameMarkEnd
+  , frameImage
 
     -- * Messages
   , message
@@ -60,15 +61,15 @@ import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(..))
 import Data.Int (Int64)
 import Data.Text (Text)
-import GHC.Exts (Addr#)
+import Data.Word (Word8, Word16)
+import GHC.Exts (Addr#, Ptr(..))
 
 #if defined(TRACY_ENABLE)
 import Control.Concurrent (threadDelay)
 import Data.Maybe (fromMaybe)
 import Data.Text.Foreign qualified as Text
-import Foreign (nullPtr)
+import Foreign (castPtr, fromBool, nullPtr)
 import Foreign.C.ConstPtr (ConstPtr(..))
-import GHC.Exts(Ptr(..))
 import System.Timeout (timeout)
 import System.Tracy.FFI qualified as FFI
 import System.Tracy.FFI.Types (clampTextBytes)
@@ -183,7 +184,14 @@ frameMarkEnd name = liftIO $ FFI.emitFrameMarkEnd (ConstPtr $ Ptr name)
 frameMarkEnd _name = pure ()
 #endif
 
--- TODO: nicer wrapper for emitFrameImage
+{-# INLINE frameImage #-}
+frameImage :: MonadIO m => Ptr pixels -> Word16 -> Word16 -> Word8 -> Bool -> m ()
+#if defined(TRACY_ENABLE)
+frameImage image width height lag flipped = liftIO $
+  FFI.emitFrameImage (ConstPtr $ castPtr image) width height lag (fromBool flipped)
+#else
+frameImage _image _width _height _lag _flipped = pure ()
+#endif
 
 {-# INLINE message #-}
 message :: MonadIO m => Text -> m ()

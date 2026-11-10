@@ -21,6 +21,10 @@ module System.Tracy.FFI.Types
     -- * Messages
   , MessageSeverity(..)
 
+    -- * GPU
+  , GpuContextType(..)
+  , gpuContextTypeCode
+
     -- * Text limits
   , maxTextBytes
   , clampTextBytes
@@ -126,6 +130,32 @@ data MessageSeverity
   | MessageSeverityError
   | MessageSeverityFatal
   deriving (Eq, Ord, Show, Enum, Bounded)
+
+data GpuContextType
+  = GpuContextTypeOpenGl
+  | GpuContextTypeVulkan
+  | GpuContextTypeOpenCL
+  | GpuContextTypeDirect3D12
+  | GpuContextTypeDirect3D11
+  | GpuContextTypeMetal
+  | GpuContextTypeCustom
+  | GpuContextTypeCUDA
+  | GpuContextTypeRocprof
+  | GpuContextTypeWebGPU
+  deriving (Eq, Ord, Show, Bounded)
+
+gpuContextTypeCode :: GpuContextType -> Word8
+gpuContextTypeCode = \case
+  GpuContextTypeOpenGl -> 1
+  GpuContextTypeVulkan -> 2
+  GpuContextTypeOpenCL -> 3
+  GpuContextTypeDirect3D12 -> 4
+  GpuContextTypeDirect3D11 -> 5
+  GpuContextTypeMetal -> 6
+  GpuContextTypeCustom -> 7
+  GpuContextTypeCUDA -> 8
+  GpuContextTypeRocprof -> 9
+  GpuContextTypeWebGPU -> 10
 
 maxTextBytes :: Int
 maxTextBytes = 65534
