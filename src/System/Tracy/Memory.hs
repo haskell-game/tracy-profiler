@@ -17,6 +17,7 @@ module System.Tracy.Memory
     -- * Memory pools
   , allocNamed
   , freeNamed
+  , discard
   ) where
 
 import Control.Monad.IO.Class (MonadIO(..))
@@ -81,4 +82,16 @@ freeNamed ptr name =
   liftIO $ FFI.emitMemoryFreeNamed (ConstPtr $ castPtr ptr) (ConstPtr $ Ptr name)
 #else
 freeNamed _ptr _name = pure ()
+#endif
+
+{-# INLINE discard #-}
+discard
+  :: MonadIO m
+  => Addr# -- ^ memory pool name
+  -> m ()
+#ifdef TRACY_ENABLE
+discard name =
+  liftIO $ FFI.emitMemoryDiscard (ConstPtr $ Ptr name)
+#else
+discard _name = pure ()
 #endif
