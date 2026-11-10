@@ -4,12 +4,18 @@
 
 module Main where
 
+import Control.Monad (unless, when)
+import System.Exit (die)
+import System.IO (hPutStrLn, stderr)
 import qualified System.Tracy as Tracy
 import qualified Data.Text as Text
 
 main :: IO ()
 main = Tracy.withProfiler $ do
-  Tracy.waitConnected_       -- wait for the tracy-capture to connect
+  when Tracy.enabled do
+    hPutStrLn stderr "Waiting for tracy-capture or tracy-profiler to connect on port 8086"
+    isConnected <- Tracy.waitConnected 100000 (Just 30_000_000)
+    unless isConnected $ die "Nothing connected within 30 seconds"
   Tracy.withSrcLoc "main.nowhereInParticular" #f0fa do
     Tracy.messageL "hi there"# -- static strings require no copying to be logged
     mapM_ runFrame [0..600]

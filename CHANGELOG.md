@@ -25,6 +25,7 @@ Now targets Tracy 0.15. The library, `tracy-capture` and `tracy-profiler` must a
 - `logString` and `logStringL`, which take a `MessageSeverity`.
 - `System.Tracy.Section`, `System.Tracy.Lock`, `System.Tracy.SharedLock` and `System.Tracy.SourceLocation`.
 - `getTime`, `beginSamplingProfiling`, `endSamplingProfiling` and `System.Tracy.Memory.discard`.
+- `enabled`, which tells whether the package was built with the `enable` flag.
 - `make DEBUG=1` builds everything in debug mode in `upstream/_build-debug`.
 
 ### Fixed
