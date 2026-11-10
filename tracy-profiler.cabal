@@ -65,6 +65,7 @@ library
       System.Tracy
       System.Tracy.FFI
       System.Tracy.FFI.Types
+      System.Tracy.Gpu
       System.Tracy.Lock
       System.Tracy.Memory
       System.Tracy.Section
@@ -101,6 +102,7 @@ library
     cpp-options: -DTRACY_ENABLE
     cc-options: -DTRACY_ENABLE
     c-sources:
+        cbits/gpu_shim.c
         cbits/layout_check.c
         cbits/section_shim.c
     extra-libraries:

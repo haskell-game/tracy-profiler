@@ -42,6 +42,30 @@ module System.Tracy.FFI
   , hsEmitZoneValue
 #endif
 
+    -- * GPU
+  , emitGpuZoneBegin
+  , emitGpuZoneBeginCallstack
+  , emitGpuZoneBeginAlloc
+  , emitGpuZoneBeginAllocCallstack
+  , emitGpuZoneEnd
+  , emitGpuTime
+  , emitGpuNewContext
+  , emitGpuContextName
+  , emitGpuCalibration
+  , emitGpuTimeSync
+
+    -- * Serialized GPU
+  , emitGpuZoneBeginSerial
+  , emitGpuZoneBeginCallstackSerial
+  , emitGpuZoneBeginAllocSerial
+  , emitGpuZoneBeginAllocCallstackSerial
+  , emitGpuZoneEndSerial
+  , emitGpuTimeSerial
+  , emitGpuNewContextSerial
+  , emitGpuContextNameSerial
+  , emitGpuCalibrationSerial
+  , emitGpuTimeSyncSerial
+
     -- * Memory
   , emitMemoryAlloc
   , emitMemoryAllocCallstack
@@ -147,10 +171,10 @@ foreign import ccall unsafe "___tracy_shutdown_profiler"
 
 foreign import ccall unsafe "___tracy_profiler_started"
   profilerStarted
-    :: Int
+    :: IO Int32
 #else
-profilerStarted :: Int
-profilerStarted = 1
+profilerStarted :: IO Int32
+profilerStarted = pure 1
 #endif
 
 ----------------------------------------------------------------
@@ -309,35 +333,73 @@ foreign import ccall unsafe "___tracy_emit_zone_value"
 
 ----------------------------------------------------------------
 
-{-
-TRACY_API void ___tracy_emit_gpu_zone_begin( const struct ___tracy_gpu_zone_begin_data );
-TRACY_API void ___tracy_emit_gpu_zone_begin_callstack( const struct ___tracy_gpu_zone_begin_callstack_data );
-TRACY_API void ___tracy_emit_gpu_zone_begin_alloc( const struct ___tracy_gpu_zone_begin_data );
-TRACY_API void ___tracy_emit_gpu_zone_begin_alloc_callstack( const struct ___tracy_gpu_zone_begin_callstack_data );
-TRACY_API void ___tracy_emit_gpu_zone_end( const struct ___tracy_gpu_zone_end_data data );
-TRACY_API void ___tracy_emit_gpu_time( const struct ___tracy_gpu_time_data );
-TRACY_API void ___tracy_emit_gpu_new_context( const struct ___tracy_gpu_new_context_data );
-TRACY_API void ___tracy_emit_gpu_context_name( const struct ___tracy_gpu_context_name_data );
-TRACY_API void ___tracy_emit_gpu_calibration( const struct ___tracy_gpu_calibration_data );
-TRACY_API void ___tracy_emit_gpu_time_sync( const struct ___tracy_gpu_time_sync_data );
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_begin"
+  emitGpuZoneBegin :: ConstPtr SourceLocationData -> Word16 -> Word8 -> IO ()
 
-TRACY_API void ___tracy_emit_gpu_zone_begin_serial( const struct ___tracy_gpu_zone_begin_data );
-TRACY_API void ___tracy_emit_gpu_zone_begin_callstack_serial( const struct ___tracy_gpu_zone_begin_callstack_data );
-TRACY_API void ___tracy_emit_gpu_zone_begin_alloc_serial( const struct ___tracy_gpu_zone_begin_data );
-TRACY_API void ___tracy_emit_gpu_zone_begin_alloc_callstack_serial( const struct ___tracy_gpu_zone_begin_callstack_data );
-TRACY_API void ___tracy_emit_gpu_zone_end_serial( const struct ___tracy_gpu_zone_end_data data );
-TRACY_API void ___tracy_emit_gpu_time_serial( const struct ___tracy_gpu_time_data );
-TRACY_API void ___tracy_emit_gpu_new_context_serial( const struct ___tracy_gpu_new_context_data );
-TRACY_API void ___tracy_emit_gpu_context_name_serial( const struct ___tracy_gpu_context_name_data );
-TRACY_API void ___tracy_emit_gpu_calibration_serial( const struct ___tracy_gpu_calibration_data );
-TRACY_API void ___tracy_emit_gpu_time_sync_serial( const struct ___tracy_gpu_time_sync_data );
--}
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_begin_callstack"
+  emitGpuZoneBeginCallstack :: ConstPtr SourceLocationData -> Int32 -> Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_begin_alloc"
+  emitGpuZoneBeginAlloc :: SrcLoc -> Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_begin_alloc_callstack"
+  emitGpuZoneBeginAllocCallstack :: SrcLoc -> Int32 -> Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_end"
+  emitGpuZoneEnd :: Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_time"
+  emitGpuTime :: Int64 -> Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_new_context"
+  emitGpuNewContext :: Int64 -> Float -> Word8 -> Word8 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_context_name"
+  emitGpuContextName :: Word8 -> ConstPtr CChar -> Word16 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_calibration"
+  emitGpuCalibration :: Int64 -> Int64 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_time_sync"
+  emitGpuTimeSync :: Int64 -> Word8 -> IO ()
+
+----------------------------------------------------------------
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_begin_serial"
+  emitGpuZoneBeginSerial :: ConstPtr SourceLocationData -> Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_begin_callstack_serial"
+  emitGpuZoneBeginCallstackSerial :: ConstPtr SourceLocationData -> Int32 -> Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_begin_alloc_serial"
+  emitGpuZoneBeginAllocSerial :: SrcLoc -> Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_begin_alloc_callstack_serial"
+  emitGpuZoneBeginAllocCallstackSerial :: SrcLoc -> Int32 -> Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_zone_end_serial"
+  emitGpuZoneEndSerial :: Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_time_serial"
+  emitGpuTimeSerial :: Int64 -> Word16 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_new_context_serial"
+  emitGpuNewContextSerial :: Int64 -> Float -> Word8 -> Word8 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_context_name_serial"
+  emitGpuContextNameSerial :: Word8 -> ConstPtr CChar -> Word16 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_calibration_serial"
+  emitGpuCalibrationSerial :: Int64 -> Int64 -> Word8 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_emit_gpu_time_sync_serial"
+  emitGpuTimeSyncSerial :: Int64 -> Word8 -> IO ()
 
 ----------------------------------------------------------------
 
 foreign import ccall unsafe "___tracy_connected"
   connected
-    :: IO Int
+    :: IO Int32
 
 ----------------------------------------------------------------
 

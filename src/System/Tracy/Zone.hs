@@ -4,6 +4,7 @@
 module System.Tracy.Zone
   ( -- * Declare zones
     withSrcLoc
+  , withSourceLocation
 
     -- * Update zone context
   , text
@@ -28,16 +29,18 @@ import Data.ByteString.Char8 qualified as ByteString
 import Data.ByteString.Unsafe (unsafeUseAsCStringLen)
 import Data.Text.Foreign qualified as Text
 import Foreign.C.ConstPtr (ConstPtr(..))
+import Foreign.C.String (peekCAString)
+import Foreign.Storable (peek)
 import GHC.Stack
 import GHC.Stack.Types qualified as GHC
 
 #ifndef ZONES_UNSAFE
 import Control.Concurrent (isCurrentThreadBound, rtsSupportsBoundThreads)
+-- !unsafe
+#endif
 #ifdef ZONES_PEDANTIC
 import System.Exit (die)
 -- pedantic
-#endif
--- !unsafe
 #endif
 
 import System.Tracy.FFI qualified as FFI
@@ -45,6 +48,7 @@ import System.Tracy.FFI qualified as FFI
 #endif
 
 import System.Tracy.FFI.Types qualified as FFI
+import System.Tracy.SourceLocation (SourceLocation(..))
 
 {- | Allocate SrcLoc and run a Zone with it.
 
@@ -115,35 +119,77 @@ withSrcLocImpl
 withSrcLocImpl _line _file _function _col inIO action =
   inIO $ let ?zoneCtx = FFI.nullTracyCZoneCtx in action
 #else
-withSrcLocImpl line file function col inIO action = do
-#ifdef ZONES_UNSAFE
+withSrcLocImpl line file function col inIO action =
   runZone
-#else
-  onStableOsThread <- if rtsSupportsBoundThreads then isCurrentThreadBound else pure True
-  if onStableOsThread then
-    runZone
-  else
-#ifdef ZONES_PEDANTIC
-    {-
-      XXX: Will not actually crash the whole program, only the thread.
-      But at least there would be a console notice when this happens.
-    -}
-    die $ ByteString.unpack file <> ":" <> show line <> " Starting a zone on unbound thread"
-#else
-    inIO $ let ?zoneCtx = FFI.nullTracyCZoneCtx in action
+    (pure $ ByteString.unpack file <> ":" <> show line)
+    inIO
+    (allocSrcloc line file function Nothing col >>= \srcloc -> FFI.emitZoneBeginAlloc srcloc 1)
+    action
+-- TRACY_ENABLE
 #endif
 
--- ZONES_UNSAFE
+{-# INLINE withSourceLocation #-}
+#ifdef TRACY_ENABLE
+withSourceLocation
+  :: MonadUnliftIO m
+  => SourceLocation
+  -> ((?zoneCtx :: FFI.TracyCZoneCtx) => m a)
+  -> m a
+withSourceLocation location@(SourceLocation locationData) action = withRunInIO \inIO ->
+  runZone
+    (describeSourceLocation location)
+    inIO
+    (FFI.emitZoneBegin locationData 1)
+    action
+#else
+withSourceLocation
+  :: SourceLocation
+  -> ((?zoneCtx :: FFI.TracyCZoneCtx) => m a)
+  -> m a
+withSourceLocation _location action = let ?zoneCtx = FFI.nullTracyCZoneCtx in action
 #endif
-  where
-    {-# INLINE runZone #-}
-    runZone = do
-      srcloc <- allocSrcloc line file function Nothing col
-      bracket
-        (FFI.emitZoneBeginAlloc srcloc 1)
-        FFI.emitZoneEnd
-        (\ctx -> inIO $ let ?zoneCtx = ctx in action)
--- TRACY_ENABLE
+
+#ifdef TRACY_ENABLE
+{-# INLINE runZone #-}
+runZone
+  :: IO String
+  -> (m a -> IO a)
+  -> IO FFI.TracyCZoneCtx
+  -> ((?zoneCtx :: FFI.TracyCZoneCtx) => m a)
+  -> IO a
+runZone location inIO beginZone action = do
+  onStableOsThread <- canStartZone
+  if onStableOsThread then
+    bracket beginZone FFI.emitZoneEnd \ctx -> inIO $ let ?zoneCtx = ctx in action
+  else
+    unboundZone location . inIO $ let ?zoneCtx = FFI.nullTracyCZoneCtx in action
+
+{-# INLINE canStartZone #-}
+canStartZone :: IO Bool
+#ifdef ZONES_UNSAFE
+canStartZone = pure True
+#else
+canStartZone = if rtsSupportsBoundThreads then isCurrentThreadBound else pure True
+#endif
+
+unboundZone :: IO String -> IO a -> IO a
+#ifdef ZONES_PEDANTIC
+unboundZone location _withoutZone = do
+  {-
+    XXX: Will not actually crash the whole program, only the thread.
+    But at least there would be a console notice when this happens.
+  -}
+  zoneLocation <- location
+  die $ zoneLocation <> " Starting a zone on unbound thread"
+#else
+unboundZone _location withoutZone = withoutZone
+#endif
+
+describeSourceLocation :: SourceLocation -> IO String
+describeSourceLocation (SourceLocation (ConstPtr locationData)) = do
+  FFI.SourceLocationData{file, line} <- peek locationData
+  fileName <- peekCAString file
+  pure $ fileName <> ":" <> show line
 #endif
 
 {- | Prepare a single-use location identifier
@@ -185,16 +231,6 @@ allocSrcloc line source function name_ col =
             (ConstPtr namePtr) (fromIntegral nameSz)
             col
 #endif
-
-{- TODO: Wrap emitZoneBegin
-
-This needs keeping SourceLocationData structures filled with pinned pointers.
-Otherwise the data would be pulled much later, outside a potential with/bracket scope
-with garbage/crashes as a result.
-
-Some nice solution would require interning SourceLocationData and its data.
-Otherwise it's a copying galore and Tracy may fail to deduplicate the locations.
--}
 
 {-# INLINE text #-}
 #ifndef TRACY_ENABLE

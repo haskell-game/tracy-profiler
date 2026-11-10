@@ -71,6 +71,7 @@ library:
     cc-options:
     - -DTRACY_ENABLE
     c-sources:
+    - cbits/gpu_shim.c
     - cbits/layout_check.c
     - cbits/section_shim.c
     extra-libraries:
