@@ -101,6 +101,20 @@ runFrame ix = Tracy.withSrcLoc "runFrame" #fcc do
   Tracy.plotInt "digits"# digits
 ```
 
+Other modules cover more of the C API:
+
+- `System.Tracy.Memory` reports allocations and frees.
+- `System.Tracy.Section` marks high-level stretches of execution, such as a game level.
+  Sections can overlap and aren't tied to a thread.
+- `System.Tracy.Lock` and `System.Tracy.SharedLock` report waiting on and holding a lock.
+  Give each one a location from `System.Tracy.SourceLocation.newSourceLocation`, which stays allocated for the rest of the program because Tracy reads it later.
+  Wait, obtain, shared release and mark events are recorded against the current OS thread, so use a bound thread if you want them on the right timeline.
+  Tracy 0.15's C API records a successful `SharedLock.tryAcquireShared` as an exclusive hold, which the matching `releaseShared` doesn't end.
+
+GPU zones, frame images and zones with static source locations aren't wrapped yet.
+
+`beginSamplingProfiling` and `endSamplingProfiling` only take effect in a library built with `TRACY_SAMPLING_PROFILER_MANUAL_START`.
+
 ## Collecting and viewing
 
 Start `tracy-capture` before running the test to avoid empty areas where nothing happens:

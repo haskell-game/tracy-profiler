@@ -1,7 +1,118 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
 
-module System.Tracy.FFI where
+module System.Tracy.FFI
+  ( -- * Profiler
+    profilerStarted
+#ifdef TRACY_MANUAL_LIFETIME
+  , startupProfiler
+  , shutdownProfiler
+#endif
+  , connected
+
+    -- * Threads
+  , setThreadName
+
+    -- * Source locations
+  , allocSrcloc
+  , allocSrclocName
+
+    -- * Zones
+  , emitZoneBegin
+  , emitZoneBeginCallstack
+  , emitZoneBeginAlloc
+  , emitZoneBeginAllocCallstack
+  , emitZoneEnd
+  , emitZoneText
+  , emitZoneName
+  , emitZoneColor
+  , emitZoneValue
+#ifdef TRACY_ON_DEMAND
+
+    -- * On-demand zone shim
+  , receiveZoneCtx
+  , hsEmitZoneBegin
+  , hsEmitZoneBeginCallstack
+  , hsEmitZoneBeginAlloc
+  , hsEmitZoneBeginAllocCallstack
+  , hsEmitZoneEnd
+  , hsEmitZoneText
+  , hsEmitZoneName
+  , hsEmitZoneColor
+  , hsEmitZoneValue
+#endif
+
+    -- * Memory
+  , emitMemoryAlloc
+  , emitMemoryAllocCallstack
+  , emitMemoryFree
+  , emitMemoryFreeCallstack
+  , emitMemoryAllocNamed
+  , emitMemoryAllocCallstackNamed
+  , emitMemoryFreeNamed
+  , emitMemoryFreeCallstackNamed
+  , emitMemoryDiscard
+  , emitMemoryDiscardCallstack
+
+    -- * Messages
+  , emitLogString
+  , emitLogStringL
+  , emitMessageAppinfo
+
+    -- * Frames
+  , emitFrameMark
+  , emitFrameMarkStart
+  , emitFrameMarkEnd
+  , emitFrameImage
+
+    -- * Plots
+  , emitPlot
+  , emitPlotFloat
+  , emitPlotInt
+  , emitPlotConfig
+
+    -- * Locks
+  , announceLockableCtx
+  , terminateLockableCtx
+  , beforeLockLockableCtx
+  , afterLockLockableCtx
+  , beforeUnlockLockableCtx
+  , afterTryLockLockableCtx
+  , markLockableCtx
+  , customNameLockableCtx
+
+    -- * Shared locks
+  , announceSharedLockableCtx
+  , terminateSharedLockableCtx
+  , beforeLockSharedLockableCtx
+  , afterLockSharedLockableCtx
+  , beforeUnlockSharedLockableCtx
+  , afterTryLockSharedLockableCtx
+  , beforeLockSharedSharedLockableCtx
+  , afterLockSharedSharedLockableCtx
+  , beforeUnlockSharedSharedLockableCtx
+  , afterTryLockSharedSharedLockableCtx
+  , markSharedLockableCtx
+  , customNameSharedLockableCtx
+
+    -- * Sections
+  , sectionEnter
+  , sectionLeave
+  , sectionSetup
+
+    -- * Time
+  , getTime
+
+    -- * Sampling profiler
+  , beginSamplingProfiling
+  , endSamplingProfiling
+
+#ifdef TRACY_FIBERS
+    -- * Fibers
+  , fiberEnter
+  , fiberLeave
+#endif
+  ) where
 
 import Data.Int
 import Data.Word
@@ -282,6 +393,12 @@ foreign import ccall unsafe "___tracy_emit_memory_free_callstack_named"
     -> ConstPtr CChar -- ^ name
     -> IO ()
 
+foreign import ccall unsafe "___tracy_emit_memory_discard"
+  emitMemoryDiscard :: ConstPtr CChar -> IO ()
+
+foreign import ccall unsafe "___tracy_emit_memory_discard_callstack"
+  emitMemoryDiscardCallstack :: ConstPtr CChar -> CInt -> IO ()
+
 ----------------------------------------------------------------
 
 foreign import ccall unsafe "___tracy_emit_logString"
@@ -365,16 +482,89 @@ foreign import ccall unsafe "___tracy_emit_message_appinfo"
 
 ----------------------------------------------------------------
 
-{-
-TRACY_API struct __tracy_lockable_context_data* ___tracy_announce_lockable_ctx( const struct ___tracy_source_location_data* srcloc );
-TRACY_API void ___tracy_terminate_lockable_ctx( struct __tracy_lockable_context_data* lockdata );
-TRACY_API int ___tracy_before_lock_lockable_ctx( struct __tracy_lockable_context_data* lockdata );
-TRACY_API void ___tracy_after_lock_lockable_ctx( struct __tracy_lockable_context_data* lockdata );
-TRACY_API void ___tracy_before_unlock_lockable_ctx( struct __tracy_lockable_context_data* lockdata );
-TRACY_API void ___tracy_after_try_lock_lockable_ctx( struct __tracy_lockable_context_data* lockdata, int acquired );
-TRACY_API void ___tracy_mark_lockable_ctx( struct __tracy_lockable_context_data* lockdata, const struct ___tracy_source_location_data* srcloc );
-TRACY_API void ___tracy_custom_name_lockable_ctx( struct __tracy_lockable_context_data* lockdata, const char* name, size_t nameSz );
--}
+foreign import ccall unsafe "___tracy_announce_lockable_ctx"
+  announceLockableCtx :: ConstPtr SourceLocationData -> IO TracyCLockCtx
+
+foreign import ccall unsafe "___tracy_terminate_lockable_ctx"
+  terminateLockableCtx :: TracyCLockCtx -> IO ()
+
+foreign import ccall unsafe "___tracy_before_lock_lockable_ctx"
+  beforeLockLockableCtx :: TracyCLockCtx -> IO Int32
+
+foreign import ccall unsafe "___tracy_after_lock_lockable_ctx"
+  afterLockLockableCtx :: TracyCLockCtx -> IO ()
+
+foreign import ccall unsafe "___tracy_before_unlock_lockable_ctx"
+  beforeUnlockLockableCtx :: TracyCLockCtx -> IO ()
+
+foreign import ccall unsafe "___tracy_after_try_lock_lockable_ctx"
+  afterTryLockLockableCtx :: TracyCLockCtx -> Int32 -> IO ()
+
+foreign import ccall unsafe "___tracy_mark_lockable_ctx"
+  markLockableCtx :: TracyCLockCtx -> ConstPtr SourceLocationData -> IO ()
+
+foreign import ccall unsafe "___tracy_custom_name_lockable_ctx"
+  customNameLockableCtx :: TracyCLockCtx -> ConstPtr CChar -> CSize -> IO ()
+
+----------------------------------------------------------------
+
+foreign import ccall unsafe "___tracy_announce_shared_lockable_ctx"
+  announceSharedLockableCtx :: ConstPtr SourceLocationData -> IO TracyCSharedLockCtx
+
+foreign import ccall unsafe "___tracy_terminate_shared_lockable_ctx"
+  terminateSharedLockableCtx :: TracyCSharedLockCtx -> IO ()
+
+foreign import ccall unsafe "___tracy_before_lock_shared_lockable_ctx"
+  beforeLockSharedLockableCtx :: TracyCSharedLockCtx -> IO Int32
+
+foreign import ccall unsafe "___tracy_after_lock_shared_lockable_ctx"
+  afterLockSharedLockableCtx :: TracyCSharedLockCtx -> IO ()
+
+foreign import ccall unsafe "___tracy_before_unlock_shared_lockable_ctx"
+  beforeUnlockSharedLockableCtx :: TracyCSharedLockCtx -> IO ()
+
+foreign import ccall unsafe "___tracy_after_try_lock_shared_lockable_ctx"
+  afterTryLockSharedLockableCtx :: TracyCSharedLockCtx -> Int32 -> IO ()
+
+foreign import ccall unsafe "___tracy_before_lock_shared_shared_lockable_ctx"
+  beforeLockSharedSharedLockableCtx :: TracyCSharedLockCtx -> IO Int32
+
+foreign import ccall unsafe "___tracy_after_lock_shared_shared_lockable_ctx"
+  afterLockSharedSharedLockableCtx :: TracyCSharedLockCtx -> IO ()
+
+foreign import ccall unsafe "___tracy_before_unlock_shared_shared_lockable_ctx"
+  beforeUnlockSharedSharedLockableCtx :: TracyCSharedLockCtx -> IO ()
+
+foreign import ccall unsafe "___tracy_after_try_lock_shared_shared_lockable_ctx"
+  afterTryLockSharedSharedLockableCtx :: TracyCSharedLockCtx -> Int32 -> IO ()
+
+foreign import ccall unsafe "___tracy_mark_shared_lockable_ctx"
+  markSharedLockableCtx :: TracyCSharedLockCtx -> ConstPtr SourceLocationData -> IO ()
+
+foreign import ccall unsafe "___tracy_custom_name_shared_lockable_ctx"
+  customNameSharedLockableCtx :: TracyCSharedLockCtx -> ConstPtr CChar -> CSize -> IO ()
+
+----------------------------------------------------------------
+
+foreign import ccall unsafe "hs_tracy_section_enter"
+  sectionEnter :: Word16 -> ConstPtr CChar -> CSize -> IO Word32
+
+foreign import ccall unsafe "___tracy_section_leave"
+  sectionLeave :: Word32 -> IO ()
+
+foreign import ccall unsafe "hs_tracy_section_setup"
+  sectionSetup :: Word16 -> ConstPtr CChar -> CSize -> IO ()
+
+----------------------------------------------------------------
+
+foreign import ccall unsafe "___tracy_get_time"
+  getTime :: IO Int64
+
+foreign import ccall safe "___tracy_begin_sampling_profiling"
+  beginSamplingProfiling :: IO CInt
+
+foreign import ccall safe "___tracy_end_sampling_profiling"
+  endSamplingProfiling :: IO ()
 
 ----------------------------------------------------------------
 

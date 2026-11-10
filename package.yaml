@@ -68,6 +68,11 @@ library:
   - condition: flag(enable)
     cpp-options:
     - -DTRACY_ENABLE
+    cc-options:
+    - -DTRACY_ENABLE
+    c-sources:
+    - cbits/layout_check.c
+    - cbits/section_shim.c
     extra-libraries:
     - TracyClient
     - stdc++
@@ -76,7 +81,6 @@ library:
       cpp-options:
       - -DTRACY_ON_DEMAND
       cc-options:
-      - -DTRACY_ENABLE
       - -DTRACY_ON_DEMAND
       c-sources:
       - cbits/zone_shim.c

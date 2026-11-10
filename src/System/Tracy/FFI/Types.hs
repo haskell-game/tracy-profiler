@@ -1,4 +1,30 @@
-module System.Tracy.FFI.Types where
+{-# LANGUAGE CPP #-}
+
+module System.Tracy.FFI.Types
+  ( -- * Colors
+    Color(..)
+
+    -- * Source locations
+  , SrcLoc(..)
+  , SourceLocationData(..)
+  , pointerBytes
+
+    -- * Contexts
+  , TracyCZoneCtx(..)
+  , nullTracyCZoneCtx
+  , TracyCLockCtx(..)
+  , TracyCSharedLockCtx(..)
+
+    -- * Plots
+  , PlotFormat(..)
+
+    -- * Messages
+  , MessageSeverity(..)
+
+    -- * Text limits
+  , maxTextBytes
+  , clampTextBytes
+  ) where
 
 import Data.Word
 import Foreign
@@ -36,30 +62,28 @@ data SourceLocationData = SourceLocationData
   , color    :: Color
   }
 
-#ifdef TRACY_ENABLE
-#include "TracyC.h"
+pointerBytes :: Int
+pointerBytes = sizeOf (nullPtr :: Ptr ())
 
 instance Storable SourceLocationData where
-  sizeOf (~_undef) = (#size struct ___tracy_source_location_data)
+  sizeOf (~_undef) = 3 * pointerBytes + 8
 
-  alignment (~_undef) = (#alignment struct ___tracy_source_location_data)
+  alignment (~_undef) = pointerBytes
 
   peek ptr = do
-    name     <- (#peek struct ___tracy_source_location_data, name) ptr
-    function <- (#peek struct ___tracy_source_location_data, function) ptr
-    file     <- (#peek struct ___tracy_source_location_data, file) ptr
-    line     <- (#peek struct ___tracy_source_location_data, line) ptr
-    color    <- (#peek struct ___tracy_source_location_data, color) ptr
+    name     <- peekByteOff ptr 0
+    function <- peekByteOff ptr pointerBytes
+    file     <- peekByteOff ptr (2 * pointerBytes)
+    line     <- peekByteOff ptr (3 * pointerBytes)
+    color    <- peekByteOff ptr (3 * pointerBytes + 4)
     pure SourceLocationData{..}
 
   poke ptr SourceLocationData{..} = do
-    (#poke struct ___tracy_source_location_data, name) ptr name
-    (#poke struct ___tracy_source_location_data, function) ptr function
-    (#poke struct ___tracy_source_location_data, file) ptr file
-    (#poke struct ___tracy_source_location_data, line) ptr line
-    (#poke struct ___tracy_source_location_data, color) ptr color
-
-#endif
+    pokeByteOff ptr 0 name
+    pokeByteOff ptr pointerBytes function
+    pokeByteOff ptr (2 * pointerBytes) file
+    pokeByteOff ptr (3 * pointerBytes) line
+    pokeByteOff ptr (3 * pointerBytes + 4) color
 
 #ifdef TRACY_ON_DEMAND
 data TracyCZoneCtx = TracyCZoneCtx
@@ -78,6 +102,14 @@ newtype TracyCZoneCtx = TracyCZoneCtx (Ptr TracyCZoneCtx)
 nullTracyCZoneCtx :: TracyCZoneCtx
 nullTracyCZoneCtx = TracyCZoneCtx nullPtr
 #endif
+
+newtype TracyCLockCtx = TracyCLockCtx (Ptr TracyCLockCtx)
+  deriving (Show)
+  deriving newtype (Eq, Ord, Storable)
+
+newtype TracyCSharedLockCtx = TracyCSharedLockCtx (Ptr TracyCSharedLockCtx)
+  deriving (Show)
+  deriving newtype (Eq, Ord, Storable)
 
 data PlotFormat
   = PlotFormatNumber -- ^ values will be displayed as plain numbers.

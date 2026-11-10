@@ -2,26 +2,42 @@
 {-# LANGUAGE MagicHash #-}
 
 module System.Tracy
-  ( withProfiler
+  ( -- * Profiler
+    withProfiler
   , connected
   , waitConnected
   , waitConnected_
 
+    -- * Program information
   , setThreadName
   , appInfo
 
+    -- * Zones
   , Zone.withSrcLoc
 
+    -- * Frames
   , frameMark
   , frameMark_
   , frameMarkStart
   , frameMarkEnd
 
+    -- * Messages
   , message
   , messageC
   , messageL
   , messageLC
+  , logString
+  , logStringL
+  , MessageSeverity(..)
 
+    -- * Time
+  , getTime
+
+    -- * Sampling profiler
+  , beginSamplingProfiling
+  , endSamplingProfiling
+
+    -- * Plots
   , plot
   , plotFloat
   , plotInt
@@ -30,21 +46,23 @@ module System.Tracy
   , PlotFormat(..)
 
 #ifdef TRACY_FIBERS
+    -- * Fibers
   , fiberEnter
   , fiberLeave
 #endif
 
+    -- * Colors
   , Color
   ) where
 
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO(..))
+import Data.Int (Int64)
 import Data.Text (Text)
 import GHC.Exts (Addr#)
 
 #if defined(TRACY_ENABLE)
 import Control.Concurrent (threadDelay)
-import Data.Int (Int8)
 import Data.Maybe (fromMaybe)
 import Data.Text.Foreign qualified as Text
 import Foreign (nullPtr)
@@ -52,10 +70,10 @@ import Foreign.C.ConstPtr (ConstPtr(..))
 import GHC.Exts(Ptr(..))
 import System.Timeout (timeout)
 import System.Tracy.FFI qualified as FFI
-import System.Tracy.FFI.Types (MessageSeverity(..), clampTextBytes)
+import System.Tracy.FFI.Types (clampTextBytes)
 #endif
 
-import System.Tracy.FFI.Types (Color, PlotFormat(..))
+import System.Tracy.FFI.Types (Color, MessageSeverity(..), PlotFormat(..))
 import System.Tracy.Zone qualified as Zone
 
 #if defined(TRACY_ENABLE) && defined(TRACY_MANUAL_LIFETIME)
@@ -159,25 +177,13 @@ frameMarkEnd _name = pure ()
 
 -- TODO: nicer wrapper for emitFrameImage
 
-#if defined(TRACY_ENABLE)
-{-# INLINE severityInfo #-}
-severityInfo :: Int8
-severityInfo = fromIntegral $ fromEnum MessageSeverityInfo
-#endif
-
 {-# INLINE message #-}
 message :: MonadIO m => Text -> m ()
 message = messageC 0
 
 {-# INLINE messageC #-}
 messageC :: MonadIO m => Color -> Text -> m ()
-#if defined(TRACY_ENABLE)
-messageC color txt = liftIO $
-  Text.withCStringLen txt \(txtPtr, txtSz) ->
-    FFI.emitLogString severityInfo color 0 (clampTextBytes txtSz) (ConstPtr txtPtr)
-#else
-messageC _color _txt = pure ()
-#endif
+messageC = logString MessageSeverityInfo
 
 {-# INLINE messageL #-}
 messageL :: MonadIO m => Addr# -> m ()
@@ -185,11 +191,47 @@ messageL = messageLC 0
 
 {-# INLINE messageLC #-}
 messageLC :: MonadIO m => Color -> Addr# -> m ()
+messageLC = logStringL MessageSeverityInfo
+
+{-# INLINE logString #-}
+logString :: MonadIO m => MessageSeverity -> Color -> Text -> m ()
 #if defined(TRACY_ENABLE)
-messageLC color txt = liftIO $
-  FFI.emitLogStringL severityInfo color 0 (ConstPtr (Ptr txt))
+logString severity color txt = liftIO $
+  Text.withCStringLen txt \(txtPtr, txtSz) ->
+    FFI.emitLogString (fromIntegral $ fromEnum severity) color 0 (clampTextBytes txtSz) (ConstPtr txtPtr)
 #else
-messageLC _color _txt = pure ()
+logString _severity _color _txt = pure ()
+#endif
+
+{-# INLINE logStringL #-}
+logStringL :: MonadIO m => MessageSeverity -> Color -> Addr# -> m ()
+#if defined(TRACY_ENABLE)
+logStringL severity color txt = liftIO $
+  FFI.emitLogStringL (fromIntegral $ fromEnum severity) color 0 (ConstPtr (Ptr txt))
+#else
+logStringL _severity _color _txt = pure ()
+#endif
+
+{-# INLINE getTime #-}
+getTime :: MonadIO m => m Int64
+#if defined(TRACY_ENABLE)
+getTime = liftIO FFI.getTime
+#else
+getTime = pure 0
+#endif
+
+beginSamplingProfiling :: MonadIO m => m Bool
+#if defined(TRACY_ENABLE)
+beginSamplingProfiling = liftIO $ (/= 0) <$> FFI.beginSamplingProfiling
+#else
+beginSamplingProfiling = pure False
+#endif
+
+endSamplingProfiling :: MonadIO m => m ()
+#if defined(TRACY_ENABLE)
+endSamplingProfiling = liftIO FFI.endSamplingProfiling
+#else
+endSamplingProfiling = pure ()
 #endif
 
 {-# INLINE plot #-}

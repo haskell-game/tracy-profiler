@@ -65,7 +65,11 @@ library
       System.Tracy
       System.Tracy.FFI
       System.Tracy.FFI.Types
+      System.Tracy.Lock
       System.Tracy.Memory
+      System.Tracy.Section
+      System.Tracy.SharedLock
+      System.Tracy.SourceLocation
       System.Tracy.Zone
   other-modules:
       Paths_tracy_profiler
@@ -95,12 +99,16 @@ library
   default-language: GHC2021
   if flag(enable)
     cpp-options: -DTRACY_ENABLE
+    cc-options: -DTRACY_ENABLE
+    c-sources:
+        cbits/layout_check.c
+        cbits/section_shim.c
     extra-libraries:
         TracyClient
         stdc++
     if flag(on_demand)
       cpp-options: -DTRACY_ON_DEMAND
-      cc-options: -DTRACY_ENABLE -DTRACY_ON_DEMAND
+      cc-options: -DTRACY_ON_DEMAND
       c-sources:
           cbits/zone_shim.c
   if flag(manual_lifetime)

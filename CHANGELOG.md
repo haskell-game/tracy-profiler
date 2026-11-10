@@ -10,23 +10,36 @@ and this project adheres to the
 
 Now targets Tracy 0.15. The library, `tracy-capture` and `tracy-profiler` must all come from that release.
 
-- **Breaking:** removed the `secure` argument from `System.Tracy.Memory.alloc`, `free`, `allocNamed` and `freeNamed`.
+### Breaking
+
+- Removed the `secure` argument from `System.Tracy.Memory.alloc`, `free`, `allocNamed` and `freeNamed`.
   Tracy dropped the distinction and always uses the secure code path.
-- **Breaking:** the matching `System.Tracy.FFI.emitMemory*` imports lost their `secure` argument.
-- **Breaking:** `System.Tracy.FFI.emitMessage`, `emitMessageL`, `emitMessageC` and `emitMessageLC` are replaced by `emitLogString` and `emitLogStringL`, following the upstream API.
+- The matching `System.Tracy.FFI.emitMemory*` imports lost their `secure` argument.
+- `System.Tracy.FFI.emitMessage`, `emitMessageL`, `emitMessageC` and `emitMessageLC` are replaced by `emitLogString` and `emitLogStringL`, following the upstream API.
   The `System.Tracy.message*` wrappers keep their types and log at the info severity.
-- **Breaking:** raised the `base` lower bound to 4.18, the first release with `Foreign.C.ConstPtr`.
-- Added `MessageSeverity` to `System.Tracy.FFI.Types`.
-- Text given to `message`, `messageC`, `appInfo`, `Zone.text` and `Zone.name` is now cut at 65534 bytes instead of tripping a Tracy assertion.
-  The cut may split a multibyte character.
+- `System.Tracy.FFI.TracyCZoneCtx` has a different representation under the `on_demand` flag.
+- Raised the `base` lower bound to 4.18, the first release with `Foreign.C.ConstPtr`.
+
+### Added
+
+- `logString` and `logStringL`, which take a `MessageSeverity`.
+- `System.Tracy.Section`, `System.Tracy.Lock`, `System.Tracy.SharedLock` and `System.Tracy.SourceLocation`.
+- `getTime`, `beginSamplingProfiling`, `endSamplingProfiling` and `System.Tracy.Memory.discard`.
+- `make DEBUG=1` builds everything in debug mode in `upstream/_build-debug`.
+
+### Fixed
+
 - `on_demand` builds now go through a small C shim, because since Tracy 0.14 the zone context in that mode has a size the GHC FFI can't pass by value.
-  `TracyCZoneCtx` has a different representation under that flag.
-- Fixed `fiberLeave` not compiling with `fibers` and `enable` both set.
 - Zones now work on the non-threaded RTS without `zones_unsafe`.
   The bound-thread check only applies when the runtime has bound threads.
   Zones from different Haskell threads must not overlap there, or the capture will fail.
-- Fixed the Makefile build paths and pinned its clone to the supported Tracy release.
-- The Makefile now builds everything in release mode by default, with `DEBUG=1` for a debug build in `upstream/_build-debug`.
+- Text given to `message`, `messageC`, `appInfo`, `Zone.text` and `Zone.name` is now cut at 65534 bytes instead of tripping a Tracy assertion.
+  The cut may split a multibyte character.
+- `fiberLeave` now compiles with `fibers` and `enable` both set.
+- `System.Tracy.FFI.Types` no longer goes stale after changing the `enable` or `on_demand` flags in an existing build directory.
+- The Makefile's paths now match where it clones Tracy, and the clone is pinned to the supported release.
+- The Makefile now builds in release mode by default.
+  Its `--config Release` had no effect with CMake's Makefile generator, so the client library was built without optimizations.
 - The Makefile now builds the client library without Tracy's crash handler.
   The handler treats `SIGPIPE` as a crash, and GHC's threaded runtime sends that signal to cancel `interruptible` foreign calls, which aborted the program while a profiler was connected.
   Existing checkouts need `make clean && make all` to pick this up.
