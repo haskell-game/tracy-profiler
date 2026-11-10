@@ -4,6 +4,7 @@
 module System.Tracy
   ( -- * Profiler
     withProfiler
+  , enabled
   , connected
   , waitConnected
   , waitConnected_
@@ -92,6 +93,13 @@ withProfiler action =
 #else
 withProfiler :: a -> a
 withProfiler = id
+#endif
+
+enabled :: Bool
+#if defined(TRACY_ENABLE)
+enabled = True
+#else
+enabled = False
 #endif
 
 {- | Check whether the profiler is connected.
